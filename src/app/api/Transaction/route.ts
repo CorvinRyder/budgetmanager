@@ -3,7 +3,51 @@ import { connectToDatabase } from "@/db";
 import sql from "mssql";
 import fs from "fs/promises";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
+  let pool = await connectToDatabase();
+  var trans = pool.transaction();
+  await trans.begin();
+  let sqlReq = trans.request();
+  let sqlStatement = `
+  select t1.trans_id, transdate, location,
+  (select 
+  cashflow_id, t2.trans_id, amount, item, category, remark 
+  from foodmgmt.dbo.bm_cashflow t2 
+  where t1.trans_id = t2.trans_id FOR JSON PATH
+  ) items, 
+  (select 
+  receipt_id, trans_id, modified_date, filename
+  from foodmgmt.dbo.bm_receipts t3
+  where t1.trans_id = t3.trans_id FOR JSON PATH
+  ) receipt,
+  (select sum(amount) 
+  from foodmgmt.dbo.bm_cashflow where 
+  foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
+  from foodmgmt.dbo.bm_transaction t1 `; //order by transdate desc
+  const { searchParams } = new URL(req.url);
+  let transIdStr = searchParams.get("transid");
+  if (transIdStr !== null) {
+    let transId = parseInt(transIdStr);
+    if (!isNaN(transId)) {
+      sqlStatement += " where t1.trans_id = @transid ";
+      sqlReq.input("transid", transId);
+    }
+  }
+  sqlStatement += " order by transdate desc";
+  let transResult = await sqlReq.query(sqlStatement);
+  let transactions: Array<Transaction> = transResult.recordset;
+  transactions.forEach((i) => {
+    if (typeof i.items === "string") {
+      i.items = JSON.parse(i.items);
+    }
+    if (typeof i.receipt === "string") {
+      i.receipt = JSON.parse(i.receipt)[0];
+    }
+  });
+  return NextResponse.json(transactions);
+}
+
+export async function PUT(req: NextRequest) {
   const formData = await req.formData();
 
   if (formData.get("transdata") === undefined) return NextResponse.error();
@@ -52,7 +96,7 @@ export async function POST(req: NextRequest) {
     // );
 
     const file = formData.get("file") as File;
-    if (file !== undefined) {
+    if (file !== undefined && file !== null) {
       let fileName = file.name;
       let extPos = fileName.lastIndexOf(".");
       fileName =

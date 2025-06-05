@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 export default function ViewTrans() {
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
-    fetch("/api/GetTrans", { method: "GET" })
+    fetch("/api/Transaction", { method: "GET" })
       .then((r) => r.json())
       .then((r) => setTrans(r));
   }, []);

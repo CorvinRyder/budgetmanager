@@ -2,7 +2,7 @@
 
 import moment from "moment";
 import { TextField, Select, MenuItem, Button } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type ItemInputProps = {
   item: TransItem;
@@ -75,6 +75,8 @@ export default function NewInput() {
     items: [],
     receipt: {} as Receipt,
   });
+  const [receiptFile, setReceiptFile] = useState<File>();
+  const fileInput = useRef<HTMLInputElement>(null);
   return (
     <div>
       <div>
@@ -105,14 +107,24 @@ export default function NewInput() {
         <div>Upload a receipt or do it later</div>
         <input
           type="file"
+          ref={fileInput}
           onChange={(evt) => {
             if (evt.target.files?.length) {
-              let newTrans = { ...curTrans };
-              newTrans.receipt.file = evt.target.files[0];
-              setCurTrans(newTrans);
+              setReceiptFile(evt.target.files[0]);
             }
           }}
         />
+        {receiptFile && (
+          <span
+            className="material-symbols-outlined ActionBtn"
+            onClick={() => {
+              if (fileInput.current !== null) fileInput.current.value = "";
+              setReceiptFile(undefined);
+            }}
+          >
+            delete
+          </span>
+        )}
       </div>
       <hr />
       <div>
@@ -179,10 +191,9 @@ export default function NewInput() {
           onClick={() => {
             const formData = new FormData();
             formData.append("transdata", JSON.stringify(curTrans));
-            if (curTrans.receipt.file !== undefined)
-              formData.append("file", curTrans.receipt.file);
-            fetch("/api/AddTrans", {
-              method: "POST",
+            if (receiptFile !== undefined) formData.append("file", receiptFile);
+            fetch("/api/Transaction", {
+              method: "PUT",
               body: formData,
             });
           }}
