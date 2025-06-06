@@ -10,7 +10,6 @@ export default function ViewTrans() {
       .then((r) => r.json())
       .then((r) => setTrans(r));
   }, []);
-
   return (
     <div>
       <table border={1} cellPadding={2}>
@@ -20,7 +19,10 @@ export default function ViewTrans() {
             <th>Location</th>
             <th>Receipt</th>
             <th>Items</th>
+            <th>Sub-total</th>
+            <th>Sale Tax</th>
             <th>Total</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -44,6 +46,20 @@ export default function ViewTrans() {
                   ))}
               </td>
               <td>{i.total && "$" + i.total}</td>
+              <td>{"$" + (i.sale_tax || 0)}</td>
+              <td>{"$" + ((i.total || 0) + (i.sale_tax || 0))}</td>
+              <td>
+                <a href={`/edittrans?transid=${i.trans_id}`}>
+                  <span className="material-symbols-outlined ActionBtn">
+                    edit
+                  </span>
+                </a>
+                <a href={``}>
+                  <span className="material-symbols-outlined ActionBtn">
+                    delete
+                  </span>
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>

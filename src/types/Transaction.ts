@@ -4,8 +4,9 @@ declare global {
     transdate: Date;
     location: string;
     items: Array<TransItem>;
-    receipt: Receipt;
+    receipt?: Receipt;
     total?: number;
+    sale_tax?: number;
   };
 
   type TransItem = {
