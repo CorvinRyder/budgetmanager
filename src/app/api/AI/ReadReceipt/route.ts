@@ -30,11 +30,12 @@ export async function POST(req: NextRequest) {
           },
         },
         {
-          text: `Please extract the store name, store address, 
-					date time, sale tax and the list of item (name, price, and quantity if available)
+          text: `Please extract the store name (store_name), store address (store_addr), 
+					date time (date_time), sale tax (sale_tax) and the list of item (items) (name, price, and quantity if available)
 					from this receipt in JSON format.
+          If the year part has only 2 digits, please try to extract the date as YY-MM-DD.
 					Please use ISO format for the date time.
-					If the image is not a receipt, please return "NOT_A_RECEIPT".`,
+					If the image is not a receipt, please return "NOT_A_RECEIPT"`,
         },
       ],
     });

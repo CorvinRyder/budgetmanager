@@ -76,6 +76,7 @@ export default function EditTransPage(props: EditTransProps) {
   const [curTrans, setCurTrans] = useState<Transaction>(
     props.trans || {
       transdate: new Date(),
+      store: "",
       location: "",
       items: [],
       receipt: {} as Receipt,
@@ -96,7 +97,7 @@ export default function EditTransPage(props: EditTransProps) {
       <div>
         <TextField
           key={dateUpdateKey}
-          placeholder="Item"
+          placeholder="Date Time"
           defaultValue={moment(curTrans.transdate).format(
             "YYYY-MM-DD HH:mm:ss"
           )}
@@ -130,7 +131,8 @@ export default function EditTransPage(props: EditTransProps) {
               console.debug(receiptList);
               let newTrans: Transaction = {
                 transdate: moment(receiptList.date_time).toDate(),
-                location: receiptList.store_name,
+                store: receiptList.store_name,
+                location: receiptList.store_addr,
                 sale_tax: receiptList.sale_tax,
                 items: receiptList.items.map(
                   (i) =>
@@ -167,7 +169,17 @@ export default function EditTransPage(props: EditTransProps) {
       <hr />
       <div>
         <TextField
-          placeholder="Where did you buy these item?"
+          placeholder="Store"
+          value={curTrans.store}
+          onChange={(evt) => {
+            let newTrans = { ...curTrans };
+            newTrans.store = evt.target.value;
+            setCurTrans(newTrans);
+          }}
+        />
+        <br />
+        <TextField
+          placeholder="Store Address"
           value={curTrans.location}
           onChange={(evt) => {
             let newTrans = { ...curTrans };

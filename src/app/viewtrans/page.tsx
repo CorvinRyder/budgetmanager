@@ -29,7 +29,14 @@ export default function ViewTrans() {
           {trans.map((i, j) => (
             <tr key={j}>
               <td>{moment(i.transdate).format("YYYY-MM-DD HH:mm:ss")}</td>
-              <td>{i.location}</td>
+              <td>
+                <a
+                  href={`https://www.google.com/maps/place/${i.location}`}
+                  target="_blank"
+                >
+                  {i.store}
+                </a>
+              </td>
               <td>
                 {i.receipt && (
                   <a href={`/receipts/${i.receipt.filename}`} target="_blank">

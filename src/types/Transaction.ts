@@ -2,6 +2,7 @@ declare global {
   type Transaction = {
     trans_id?: number;
     transdate: Date;
+    store: string;
     location: string;
     items: Array<TransItem>;
     receipt?: Receipt;

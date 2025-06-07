@@ -26,7 +26,7 @@ export function getTransactions(transId?: number): Promise<Array<Transaction>> {
     await trans.begin();
     let sqlReq = trans.request();
     let sqlStatement = `
-    select t1.trans_id, transdate, location, sale_tax,
+    select t1.trans_id, transdate, store, location, sale_tax,
     (select 
     cashflow_id, t2.trans_id, amount, item, category, remark 
     from foodmgmt.dbo.bm_cashflow t2 
@@ -42,9 +42,9 @@ export function getTransactions(transId?: number): Promise<Array<Transaction>> {
     foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
     from foodmgmt.dbo.bm_transaction t1 `; //order by transdate desc
     if (transId !== undefined) {
-      sqlStatement += " where t1.trans_id = @transid ";
+      sqlStatement += " where t1.trans_id = @transid and deleted is null";
       sqlReq.input("transid", transId);
-    }
+    } else sqlStatement += " where deleted is null ";
     sqlStatement += " order by transdate desc";
     let transResult = await sqlReq.query(sqlStatement);
     let transactions: Array<Transaction> = transResult.recordset;
@@ -134,11 +134,12 @@ export async function PUT(req: NextRequest) {
   try {
     let sqlReq = trans.request();
     sqlReq.input("trandate", transData.transdate);
+    sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("sale_tax", transData.sale_tax);
     let transId: number = (
       await sqlReq.query(
-        "INSERT INTO foodmgmt.dbo.bm_transaction(transdate, location, sale_tax) output inserted.trans_id VALUES(@trandate, @location, @sale_tax);"
+        "INSERT INTO foodmgmt.dbo.bm_transaction(transdate, store, location, sale_tax) output inserted.trans_id VALUES(@trandate, @store, @location, @sale_tax);"
       )
     ).recordset[0]["trans_id"];
     console.debug(transId);
@@ -182,11 +183,12 @@ export async function POST(req: NextRequest) {
     let sqlReq = trans.request();
     sqlReq.input("trans_id", transData.trans_id);
     sqlReq.input("transdate", transData.transdate);
+    sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("sale_tax", transData.sale_tax);
     let updateResult = await sqlReq.query(`
     UPDATE foodmgmt.dbo.bm_transaction
-    SET transdate=@transdate, location=@location, sale_tax=@sale_tax
+    SET transdate=@transdate, store=@store, location=@location, sale_tax=@sale_tax
     WHERE trans_id=@trans_id;`);
     if (updateResult.rowsAffected[0] === 0) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 declare global {
   type ReceiptContent = {
     store_name: string;
+    store_addr: string;
     date_time: Date;
     items: Array<{
       name: string;
