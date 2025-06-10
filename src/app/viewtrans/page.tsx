@@ -54,7 +54,7 @@ export default function ViewTrans() {
               </td>
               <td>{i.total && "$" + i.total}</td>
               <td>{"$" + (i.sale_tax || 0)}</td>
-              <td>{"$" + ((i.total || 0) + (i.sale_tax || 0))}</td>
+              <td>{"$" + ((i.total || 0) + (i.sale_tax || 0)).toFixed(2)}</td>
               <td>
                 <a href={`/edittrans?transid=${i.trans_id}`}>
                   <span className="material-symbols-outlined ActionBtn">

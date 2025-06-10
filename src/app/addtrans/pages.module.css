@@ -1,0 +1,14 @@
+.ReceiptUploadBox {
+  width: 200px;
+}
+
+.ReceiptUploadBox > .imgblock {
+  width: 200px;
+  height: 200px;
+}
+
+.ReceiptUploadBox IMG {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+}

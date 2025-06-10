@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
 					from this receipt in JSON format.
           If the year part has only 2 digits, please try to extract the date as YY-MM-DD.
 					Please use ISO format for the date time.
-					If the image is not a receipt, please return "NOT_A_RECEIPT"`,
+          Can you try to guess what the items actually are, and put your guess to a key called "remark" of each item?
+          Try to categorize the item, like Grocery, Snack and some other category you think the item would fit, and put it in the category key.
+          For address, please try to split the address parts with comma.
+					If the image is not a receipt, please stop analyzing the item immediately and return the string "NOT_A_RECEIPT"`,
         },
       ],
     });
@@ -44,9 +47,9 @@ export async function POST(req: NextRequest) {
     if (resultText === "NOT_A_RECEIPT")
       return NextResponse.json(
         {
-          message: "NOT_A_RECEIPT",
+          store_name: "NOT_A_RECEIPT",
         },
-        { status: 500 }
+        { status: 400 }
       );
     resultText = resultText?.substring(7, resultText.length - 3);
     let receiptList: ReceiptContent = JSON.parse(resultText || "");

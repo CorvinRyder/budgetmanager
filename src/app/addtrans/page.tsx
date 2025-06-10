@@ -1,8 +1,10 @@
 "use client";
 
 import moment from "moment";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button, Switch, FormControlLabel } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Classes from "./pages.module.css";
+import AlertDialog from "@/components/AlertDialog";
 
 type ItemInputProps = {
   item: TransItem;
@@ -72,6 +74,81 @@ type EditTransProps = {
   trans?: Transaction;
 };
 
+async function extractReceiptContent(file: File) {
+  let formData = new FormData();
+  formData.append("file", file);
+  let readReceiptResult = await await fetch("/api/AI/ReadReceipt", {
+    method: "POST",
+    body: formData,
+  });
+  if (readReceiptResult.status === 400) {
+    return;
+  }
+  let receiptList: ReceiptContent = await readReceiptResult.json();
+  console.debug(receiptList);
+
+  let newTrans: Transaction = {
+    transdate: moment(receiptList.date_time).toDate(),
+    store: receiptList.store_name,
+    location: receiptList.store_addr,
+    sale_tax: receiptList.sale_tax,
+    items: receiptList.items.map(
+      (i) =>
+        ({
+          item: i.name,
+          amount: i.price,
+          remark: i.remark,
+          category: i.category,
+        } as TransItem)
+    ),
+  };
+  return newTrans;
+}
+
+function UploadReceiptDialog(props: {
+  OnDialogClosed: (file: File | undefined, useAI: boolean) => void;
+  cancel?: boolean;
+}) {
+  const [isUseAi, setIsUseAi] = useState<boolean>(true);
+  const [selectedFile, setSelectedFile] = useState<File>();
+
+  const latestStateRef = useRef({ selectedFile, isUseAi });
+
+  useEffect(() => {
+    latestStateRef.current = { selectedFile, isUseAi };
+  }, [selectedFile, isUseAi]);
+
+  useEffect(() => {
+    return () => {
+      console.debug("On destroy");
+      console.debug(props.cancel);
+      if (props.cancel) return;
+      let { selectedFile, isUseAi } = latestStateRef.current;
+      if (selectedFile !== undefined)
+        props.OnDialogClosed(selectedFile, isUseAi);
+    };
+  }, [props.cancel]);
+
+  return (
+    <div>
+      <input
+        type="file"
+        onChange={async (evt) => {
+          if (evt.target.files?.length) {
+            let file = evt.target.files?.[0];
+            if (file !== undefined) setSelectedFile(file);
+          }
+        }}
+      />
+      <FormControlLabel
+        control={<Switch onClick={() => setIsUseAi(!isUseAi)} />}
+        label="Analyze the receipt content with AI"
+        checked={isUseAi}
+      />
+    </div>
+  );
+}
+
 export default function EditTransPage(props: EditTransProps) {
   const [curTrans, setCurTrans] = useState<Transaction>(
     props.trans || {
@@ -84,16 +161,99 @@ export default function EditTransPage(props: EditTransProps) {
     }
   );
   const [receiptFile, setReceiptFile] = useState<File>();
-  const fileInput = useRef<HTMLInputElement>(null);
   const receiptUrl = useMemo(() => {
     if (receiptFile !== undefined && receiptFile !== null)
       return URL.createObjectURL(receiptFile);
-    else if (curTrans.receipt) return "/receipts/" + curTrans.receipt.filename;
+    else if (curTrans.receipt?.filename)
+      return "/receipts/" + curTrans.receipt.filename;
     else return "";
   }, [receiptFile]);
   const [dateUpdateKey, setDateUpdateKey] = useState<number>(Date.now());
+  const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
+    {} as AlertDialogParams
+  );
+
+  function uploadReceiptDialog(
+    onReceiptSelected: (file: File | undefined, useAI: boolean) => void,
+    cancel?: boolean
+  ) {
+    setDialogParams({
+      open: true,
+      title: "Upload Receipt",
+      jsx: (
+        <UploadReceiptDialog
+          OnDialogClosed={onReceiptSelected}
+          cancel={cancel}
+        />
+      ),
+      // OnDialogCancel() {
+      //   uploadReceiptDialog(onReceiptSelected, true);
+      // },
+    });
+  }
+
   return (
     <div>
+      <AlertDialog params={dialogParams} />
+      <div>
+        <div className={Classes.ReceiptUploadBox}>
+          <div
+            className={Classes.imgblock}
+            onClick={() =>
+              uploadReceiptDialog(async (file, useAI) => {
+                if (file !== undefined && useAI) {
+                  setDialogParams({
+                    open: true,
+                    title: "Analyzing Receipt Content",
+                    jsx: (
+                      <div>
+                        <span className="Loading material-symbols-outlined">
+                          sync
+                        </span>
+                        Analyzing the receipt with AI...
+                      </div>
+                    ),
+                    noOkButton: true,
+                  });
+                  let newTrans = await extractReceiptContent(file);
+                  if (newTrans !== undefined) {
+                    setCurTrans(newTrans);
+                    setDateUpdateKey(Date.now());
+                    setDialogParams({
+                      open: false,
+                    });
+                    setReceiptFile(file);
+                  } else {
+                    setDialogParams({
+                      open: true,
+                      title: "Analyzing Receipt Content",
+                      jsx: <div>The uploaded image is not a receipt!</div>,
+                    });
+                  }
+                } else setReceiptFile(file);
+              })
+            }
+          >
+            {!receiptUrl ? (
+              <div>No receipt uploaded or selected</div>
+            ) : (
+              <img src={receiptUrl} />
+            )}
+          </div>
+        </div>
+        {/* {receiptFile && (
+          <span
+            className="material-symbols-outlined ActionBtn"
+            onClick={() => {
+              if (fileInput.current !== null) fileInput.current.value = "";
+              setReceiptFile(undefined);
+            }}
+          >
+            delete
+          </span>
+        )} */}
+      </div>
+      <hr />
       <div>
         <TextField
           key={dateUpdateKey}
@@ -109,62 +269,6 @@ export default function EditTransPage(props: EditTransProps) {
             setCurTrans(newTrans);
           }}
         />
-        {}
-      </div>
-      <hr />
-      <div>
-        <div>Upload a receipt or do it later</div>
-        <input
-          type="file"
-          ref={fileInput}
-          onChange={async (evt) => {
-            if (evt.target.files?.length) {
-              setReceiptFile(evt.target.files[0]);
-              let formData = new FormData();
-              formData.append("file", evt.target.files[0]);
-              let receiptList: ReceiptContent = await (
-                await fetch("/api/AI/ReadReceipt", {
-                  method: "POST",
-                  body: formData,
-                })
-              ).json();
-              console.debug(receiptList);
-              let newTrans: Transaction = {
-                transdate: moment(receiptList.date_time).toDate(),
-                store: receiptList.store_name,
-                location: receiptList.store_addr,
-                sale_tax: receiptList.sale_tax,
-                items: receiptList.items.map(
-                  (i) =>
-                    ({
-                      item: i.name,
-                      amount: i.price,
-                      remark: i.quantity?.toString(),
-                      category: "XX",
-                    } as TransItem)
-                ),
-              };
-              setCurTrans(newTrans);
-              setDateUpdateKey(Date.now());
-            } else setReceiptFile(undefined);
-          }}
-        />
-        {receiptFile && (
-          <span
-            className="material-symbols-outlined ActionBtn"
-            onClick={() => {
-              if (fileInput.current !== null) fileInput.current.value = "";
-              setReceiptFile(undefined);
-            }}
-          >
-            delete
-          </span>
-        )}
-        <div>
-          <a href={receiptUrl} target="_blank">
-            Receipt File
-          </a>
-        </div>
       </div>
       <hr />
       <div>
@@ -248,13 +352,29 @@ export default function EditTransPage(props: EditTransProps) {
         <hr />
         <Button
           variant="contained"
-          onClick={() => {
+          onClick={async () => {
             const formData = new FormData();
             formData.append("transdata", JSON.stringify(curTrans));
             if (receiptFile !== undefined) formData.append("file", receiptFile);
-            fetch("/api/Transaction", {
+            setDialogParams({
+              open: true,
+              title: "Saving the Transaction Record",
+              jsx: (
+                <div>
+                  <span className="Loading material-symbols-outlined">
+                    sync
+                  </span>
+                  Saving the transaction record to the database...
+                </div>
+              ),
+              noOkButton: true,
+            });
+            await fetch("/api/Transaction", {
               method: "PUT",
               body: formData,
+            });
+            setDialogParams({
+              open: false,
             });
           }}
         >

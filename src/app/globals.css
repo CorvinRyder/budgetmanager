@@ -40,3 +40,19 @@ a {
     color-scheme: dark;
   }
 }
+
+@keyframes loading {
+  from {
+    transform: rotateZ(0);
+  }
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+.Loading.material-symbols-outlined {
+  animation-name: loading;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  vertical-align: middle;
+}

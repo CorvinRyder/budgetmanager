@@ -37,7 +37,7 @@ export function getTransactions(transId?: number): Promise<Array<Transaction>> {
     from foodmgmt.dbo.bm_receipts t3
     where t1.trans_id = t3.trans_id FOR JSON PATH
     ) receipt,
-    (select sum(amount) 
+    (select cast(sum(amount) as numeric(5,2))
     from foodmgmt.dbo.bm_cashflow where 
     foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
     from foodmgmt.dbo.bm_transaction t1 `; //order by transdate desc
@@ -56,6 +56,7 @@ export function getTransactions(transId?: number): Promise<Array<Transaction>> {
         i.receipt = JSON.parse(i.receipt)[0];
       }
     });
+    pool.close();
     resolve(transactions);
   });
 }

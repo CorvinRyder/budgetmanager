@@ -7,6 +7,8 @@ declare global {
       name: string;
       price: number;
       quantity: number;
+      remark: string;
+      category: string;
     }>;
     total: number;
     sale_tax: number;
