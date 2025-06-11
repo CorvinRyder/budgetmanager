@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/db";
+import getTransactions from "./getTransaction";
 import sql from "mssql";
 import fs from "fs/promises";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  let transIdStr = searchParams.get("transid");
+  const transIdStr = searchParams.get("transid");
   let transId = undefined;
   if (transIdStr !== null) {
     transId = parseInt(transIdStr);
@@ -17,48 +18,6 @@ export async function GET(req: NextRequest) {
     }
   }
   return NextResponse.json(await getTransactions(transId));
-}
-
-export function getTransactions(transId?: number): Promise<Array<Transaction>> {
-  return new Promise(async (resolve) => {
-    let pool = await connectToDatabase();
-    var trans = pool.transaction();
-    await trans.begin();
-    let sqlReq = trans.request();
-    let sqlStatement = `
-    select t1.trans_id, transdate, store, location, sale_tax,
-    (select 
-    cashflow_id, t2.trans_id, amount, item, category, remark 
-    from foodmgmt.dbo.bm_cashflow t2 
-    where t1.trans_id = t2.trans_id FOR JSON PATH
-    ) items, 
-    (select 
-    receipt_id, trans_id, modified_date, filename
-    from foodmgmt.dbo.bm_receipts t3
-    where t1.trans_id = t3.trans_id FOR JSON PATH
-    ) receipt,
-    (select cast(sum(amount) as numeric(5,2))
-    from foodmgmt.dbo.bm_cashflow where 
-    foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
-    from foodmgmt.dbo.bm_transaction t1 `; //order by transdate desc
-    if (transId !== undefined) {
-      sqlStatement += " where t1.trans_id = @transid and deleted is null";
-      sqlReq.input("transid", transId);
-    } else sqlStatement += " where deleted is null ";
-    sqlStatement += " order by transdate desc";
-    let transResult = await sqlReq.query(sqlStatement);
-    let transactions: Array<Transaction> = transResult.recordset;
-    transactions.forEach((i) => {
-      if (typeof i.items === "string") {
-        i.items = JSON.parse(i.items);
-      }
-      if (typeof i.receipt === "string") {
-        i.receipt = JSON.parse(i.receipt)[0];
-      }
-    });
-    pool.close();
-    resolve(transactions);
-  });
 }
 
 async function updateCashflow(
@@ -102,7 +61,7 @@ async function saveReceiptFile(
   }
 
   let fileName = file.name;
-  let extPos = fileName.lastIndexOf(".");
+  const extPos = fileName.lastIndexOf(".");
   fileName =
     transId +
     "_" +
@@ -129,16 +88,16 @@ export async function PUT(req: NextRequest) {
 
   if (transData.items.length === 0) return NextResponse.error();
 
-  let pool = await connectToDatabase();
-  var trans = pool.transaction();
+  const pool = await connectToDatabase();
+  const trans = pool.transaction();
   await trans.begin();
   try {
-    let sqlReq = trans.request();
+    const sqlReq = trans.request();
     sqlReq.input("trandate", transData.transdate);
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("sale_tax", transData.sale_tax);
-    let transId: number = (
+    const transId: number = (
       await sqlReq.query(
         "INSERT INTO foodmgmt.dbo.bm_transaction(transdate, store, location, sale_tax) output inserted.trans_id VALUES(@trandate, @store, @location, @sale_tax);"
       )
@@ -177,17 +136,17 @@ export async function POST(req: NextRequest) {
 
   if (transData.items.length === 0) return NextResponse.error();
 
-  let pool = await connectToDatabase();
-  var trans = pool.transaction();
+  const pool = await connectToDatabase();
+  const trans = pool.transaction();
   await trans.begin();
   try {
-    let sqlReq = trans.request();
+    const sqlReq = trans.request();
     sqlReq.input("trans_id", transData.trans_id);
     sqlReq.input("transdate", transData.transdate);
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("sale_tax", transData.sale_tax);
-    let updateResult = await sqlReq.query(`
+    const updateResult = await sqlReq.query(`
     UPDATE foodmgmt.dbo.bm_transaction
     SET transdate=@transdate, store=@store, location=@location, sale_tax=@sale_tax
     WHERE trans_id=@trans_id;`);

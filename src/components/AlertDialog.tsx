@@ -19,7 +19,7 @@ declare global {
     OnDialogOk?: () => void;
     OnDialogCancel?: () => void;
     OnDialogShow?: () => void;
-    DialogProps?: KeyValueList<any>;
+    DialogProps?: KeyValueList<unknown>;
     noOkButton?: boolean;
   };
 
@@ -32,20 +32,25 @@ type AlertDialogProps = {
 };
 
 export default function AlertDialog(props: AlertDialogProps) {
-  const isOnMobile = window.matchMedia("(max-aspect-ratio: 0.999)").matches;
-  let params = props.params || ({} as AlertDialogParams);
+  const [isOnMobile, setIsOnMobile] = React.useState<boolean>(false);
+  const params = props.params || ({} as AlertDialogParams);
   const [open, setOpen] = React.useState(false);
+
+  React.useEffect(
+    () => setIsOnMobile(window.matchMedia("(max-aspect-ratio: 0.999)").matches),
+    []
+  );
 
   React.useEffect(() => {
     if (!("open" in params)) return;
     if (params.open != open) setOpen(params.open);
-    params.open && params.OnDialogShow && params.OnDialogShow();
+    if (params.open && params.OnDialogShow) params.OnDialogShow();
   }, [params]);
 
   const handleClose = (isOk: boolean) => {
     setOpen(false);
-    if (isOk) params.OnDialogOk && params.OnDialogOk();
-    else params.OnDialogCancel && params.OnDialogCancel();
+    if (isOk && params.OnDialogOk) params.OnDialogOk();
+    else if (!isOk && params.OnDialogCancel) params.OnDialogCancel();
   };
 
   return (

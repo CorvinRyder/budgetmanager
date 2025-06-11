@@ -12,9 +12,9 @@ type ItemInputProps = {
   onDelete?: () => void;
 };
 
-let ItemInput = function (props: ItemInputProps) {
+const ItemInput = function (props: ItemInputProps) {
   const onChangeHandler = function (newVal: string, key: keyof TransItem) {
-    let newItem = { ...props.item };
+    const newItem = { ...props.item };
     switch (key) {
       case "amount":
         newItem.amount = parseFloat(newVal);
@@ -25,7 +25,7 @@ let ItemInput = function (props: ItemInputProps) {
       default:
         newItem[key] = newVal;
     }
-    props.onChange && props.onChange(newItem);
+    if (props.onChange !== undefined) props.onChange(newItem);
   };
   return (
     <div>
@@ -75,19 +75,19 @@ type EditTransProps = {
 };
 
 async function extractReceiptContent(file: File) {
-  let formData = new FormData();
+  const formData = new FormData();
   formData.append("file", file);
-  let readReceiptResult = await await fetch("/api/AI/ReadReceipt", {
+  const readReceiptResult = await await fetch("/api/AI/ReadReceipt", {
     method: "POST",
     body: formData,
   });
   if (readReceiptResult.status === 400) {
     return;
   }
-  let receiptList: ReceiptContent = await readReceiptResult.json();
+  const receiptList: ReceiptContent = await readReceiptResult.json();
   console.debug(receiptList);
 
-  let newTrans: Transaction = {
+  const newTrans: Transaction = {
     transdate: moment(receiptList.date_time).toDate(),
     store: receiptList.store_name,
     location: receiptList.store_addr,
@@ -123,7 +123,7 @@ function UploadReceiptDialog(props: {
       console.debug("On destroy");
       console.debug(props.cancel);
       if (props.cancel) return;
-      let { selectedFile, isUseAi } = latestStateRef.current;
+      const { selectedFile, isUseAi } = latestStateRef.current;
       if (selectedFile !== undefined)
         props.OnDialogClosed(selectedFile, isUseAi);
     };
@@ -135,7 +135,7 @@ function UploadReceiptDialog(props: {
         type="file"
         onChange={async (evt) => {
           if (evt.target.files?.length) {
-            let file = evt.target.files?.[0];
+            const file = evt.target.files?.[0];
             if (file !== undefined) setSelectedFile(file);
           }
         }}
@@ -215,7 +215,7 @@ export default function EditTransPage(props: EditTransProps) {
                     ),
                     noOkButton: true,
                   });
-                  let newTrans = await extractReceiptContent(file);
+                  const newTrans = await extractReceiptContent(file);
                   if (newTrans !== undefined) {
                     setCurTrans(newTrans);
                     setDateUpdateKey(Date.now());
@@ -264,7 +264,7 @@ export default function EditTransPage(props: EditTransProps) {
           onBlur={(evt) => {
             let dateCheck = moment(evt.target.value);
             if (!dateCheck.isValid) dateCheck = moment();
-            let newTrans = { ...curTrans };
+            const newTrans = { ...curTrans };
             newTrans.transdate = dateCheck.toDate();
             setCurTrans(newTrans);
           }}
@@ -276,7 +276,7 @@ export default function EditTransPage(props: EditTransProps) {
           placeholder="Store"
           value={curTrans.store}
           onChange={(evt) => {
-            let newTrans = { ...curTrans };
+            const newTrans = { ...curTrans };
             newTrans.store = evt.target.value;
             setCurTrans(newTrans);
           }}
@@ -286,7 +286,7 @@ export default function EditTransPage(props: EditTransProps) {
           placeholder="Store Address"
           value={curTrans.location}
           onChange={(evt) => {
-            let newTrans = { ...curTrans };
+            const newTrans = { ...curTrans };
             newTrans.location = evt.target.value;
             setCurTrans(newTrans);
           }}
@@ -297,7 +297,7 @@ export default function EditTransPage(props: EditTransProps) {
         placeholder="Sale tax"
         value={curTrans.sale_tax}
         onChange={(evt) => {
-          let newTrans = { ...curTrans };
+          const newTrans = { ...curTrans };
           newTrans.sale_tax = parseInt(evt.target.value);
           setCurTrans(newTrans);
         }}
@@ -309,7 +309,7 @@ export default function EditTransPage(props: EditTransProps) {
           <span
             className="material-symbols-outlined ActionBtn"
             onClick={() => {
-              let items = curTrans.items.concat([]);
+              const items = curTrans.items.concat([]);
               items.push({
                 amount: 0,
                 item: "",
@@ -331,7 +331,7 @@ export default function EditTransPage(props: EditTransProps) {
               key={j}
               item={i}
               onChange={(newV) => {
-                let items = curTrans.items.concat([]);
+                const items = curTrans.items.concat([]);
                 items.splice(j, 1, newV);
                 setCurTrans({
                   ...curTrans,
@@ -339,7 +339,7 @@ export default function EditTransPage(props: EditTransProps) {
                 });
               }}
               onDelete={() => {
-                let items = curTrans.items.concat([]);
+                const items = curTrans.items.concat([]);
                 items.splice(j, 1);
                 setCurTrans({
                   ...curTrans,

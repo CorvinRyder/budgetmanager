@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     resultText = resultText?.substring(7, resultText.length - 3);
-    let receiptList: ReceiptContent = JSON.parse(resultText || "");
+    const receiptList: ReceiptContent = JSON.parse(resultText || "");
     return NextResponse.json(receiptList, { status: 200 });
   } catch (err) {
     return NextResponse.json({ message: err }, { status: 500 });

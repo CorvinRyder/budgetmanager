@@ -1,17 +1,17 @@
 import EditTransPage from "../addtrans/page";
-import { getTransactions } from "../api/Transaction/route";
+import getTransactions from "../api/Transaction/getTransaction";
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   let curTrans = undefined;
-  searchParams = await searchParams;
-  if (searchParams?.transid) {
-    let transId = parseInt(searchParams?.transid as string);
+  const { transid } = await searchParams;
+  if (transid) {
+    const transId = parseInt(transid as string);
     if (!isNaN(transId)) {
-      let queryResult = await getTransactions(transId);
+      const queryResult = await getTransactions(transId);
       curTrans = queryResult?.[0];
     }
   }
