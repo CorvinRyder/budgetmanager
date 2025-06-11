@@ -31,7 +31,8 @@ body {
 }
 
 a {
-  color: inherit;
+  cursor: pointer;
+  color: #0873ff;
   text-decoration: none;
 }
 

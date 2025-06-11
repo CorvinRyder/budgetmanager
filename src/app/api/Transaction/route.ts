@@ -69,7 +69,8 @@ async function saveReceiptFile(
     fileName.substring(extPos);
   const fileBuffer = await file.arrayBuffer();
   const buffer = new Uint8Array(fileBuffer);
-  await fs.writeFile(`./public/receipts/${fileName}`, buffer);
+
+  await fs.writeFile(`${process.cwd()}/receipts/${fileName}`, buffer);
   if (!deleteOld) sqlReq.input("trans_id", transId);
   sqlReq.input("filename", fileName);
   return sqlReq.query(
@@ -126,15 +127,27 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
 
-  if (formData.get("transdata") === undefined) return NextResponse.error();
+  if (formData.get("transdata") === undefined)
+    return NextResponse.json(
+      { message: "Incorrect parameter!" },
+      { status: 400 }
+    );
 
   const transData: Transaction = JSON.parse(
     formData.get("transdata") as string
   );
 
-  if (transData.trans_id === undefined) return NextResponse.error();
+  if (transData.trans_id === undefined)
+    return NextResponse.json(
+      { message: "Transaction not found!" },
+      { status: 404 }
+    );
 
-  if (transData.items.length === 0) return NextResponse.error();
+  if (transData.items.length === 0)
+    return NextResponse.json(
+      { message: "Incorrect parameter!" },
+      { status: 400 }
+    );
 
   const pool = await connectToDatabase();
   const trans = pool.transaction();
@@ -176,5 +189,59 @@ export async function POST(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const transIdStr = searchParams.get("transid");
+
+  if (transIdStr === null)
+    return NextResponse.json(
+      { message: "Incorrect parameter!" },
+      { status: 400 }
+    );
+
+  const transId = parseInt(transIdStr);
+
+  if (isNaN(transId))
+    return NextResponse.json(
+      { message: "Incorrect parameter!" },
+      { status: 400 }
+    );
+
+  const pool = await connectToDatabase();
+  const trans = pool.transaction();
+  try {
+    await trans.begin();
+    const sqlReq = trans.request();
+
+    sqlReq.input("transid", transId);
+
+    const deleteResult = await sqlReq.query(
+      "UPDATE bm_transaction set deleted = 'T' where trans_id = @transid"
+    );
+    if (deleteResult.rowsAffected[0] === 0)
+      return NextResponse.json(
+        { message: "Tranaction record not found!" },
+        { status: 404 }
+      );
+
+    await sqlReq.query(
+      "UPDATE bm_cashflow set deleted = 'T' where trans_id = @transid"
+    );
+    await sqlReq.query(
+      "UPDATE bm_receipts set deleted = 'T' where trans_id = @transid"
+    );
+
+    await trans.commit();
+
+    return NextResponse.json(
+      { message: "Transaction deleted" },
+      { status: 200 }
+    );
+  } catch (err) {
+    await trans.rollback();
+    return NextResponse.json({ message: err }, { status: 500 });
   }
 }

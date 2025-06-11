@@ -1,17 +1,23 @@
 "use client";
 
+import AlertDialog from "@/components/AlertDialog";
 import moment from "moment";
 import { useEffect, useState } from "react";
 
 export default function ViewTrans() {
+  const [updateKey, setUpdateKey] = useState(Date.now());
+  const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
+    {} as AlertDialogParams
+  );
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
     fetch("/api/Transaction", { method: "GET" })
       .then((r) => r.json())
       .then((r) => setTrans(r));
-  }, []);
+  }, [updateKey]);
   return (
     <div>
+      <AlertDialog params={dialogParams} />
       <table border={1} cellPadding={2}>
         <thead>
           <tr>
@@ -30,12 +36,20 @@ export default function ViewTrans() {
             <tr key={j}>
               <td>{moment(i.transdate).format("YYYY-MM-DD HH:mm:ss")}</td>
               <td>
-                <a
-                  href={`https://www.google.com/maps/place/${i.location}`}
-                  target="_blank"
-                >
-                  {i.store}
-                </a>
+                {i.location ? (
+                  <a
+                    href={
+                      i.location.startsWith("http")
+                        ? i.location
+                        : `https://www.google.com/maps/place/${i.location}`
+                    }
+                    target="_blank"
+                  >
+                    {i.store}
+                  </a>
+                ) : (
+                  i.store
+                )}
               </td>
               <td>
                 {i.receipt && (
@@ -61,7 +75,40 @@ export default function ViewTrans() {
                     edit
                   </span>
                 </a>
-                <a href={``}>
+                <a
+                  onClick={() => {
+                    setDialogParams({
+                      open: true,
+                      title: "Delete Transaction",
+                      content:
+                        "Are you sure to delete this transaction? It can't be undone!",
+                      async OnDialogOk() {
+                        setDialogParams({
+                          open: true,
+                          title: "Saving the Transaction Record",
+                          jsx: (
+                            <div>
+                              <span className="Loading material-symbols-outlined">
+                                sync
+                              </span>
+                              Deleting the transaction record from the
+                              database...
+                            </div>
+                          ),
+                          noOkButton: true,
+                        });
+                        await fetch("/api/Transaction?transid=" + i.trans_id, {
+                          method: "DELETE",
+                        });
+                        setDialogParams({
+                          open: false,
+                        });
+                        setUpdateKey(Date.now());
+                      },
+                      OnDialogCancel() {},
+                    });
+                  }}
+                >
                   <span className="material-symbols-outlined ActionBtn">
                     delete
                   </span>

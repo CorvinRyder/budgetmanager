@@ -27,7 +27,7 @@ export default function NumberField(props: NumberFieldProps) {
         if (isNaN(numValue)) numValue = 0;
         onChange(numValue);
       }}
-      {...props.textFieldProps}
+      {...textFieldProps}
     />
   );
 }

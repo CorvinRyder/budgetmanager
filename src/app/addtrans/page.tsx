@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Classes from "./pages.module.css";
 import AlertDialog from "@/components/AlertDialog";
 import NumberField from "@/components/NumberField";
+import { useRouter } from "next/navigation";
 
 type ItemInputProps = {
   item: TransItem;
@@ -88,8 +89,6 @@ async function extractReceiptContent(file: File) {
     return;
   }
   const receiptList: ReceiptContent = await readReceiptResult.json();
-  console.debug(receiptList);
-
   const newTrans: Transaction = {
     transdate: moment(receiptList.date_time).toDate(),
     store: receiptList.store_name,
@@ -153,6 +152,7 @@ function UploadReceiptDialog(props: {
 }
 
 export default function EditTransPage(props: EditTransProps) {
+  const router = useRouter();
   const [curTrans, setCurTrans] = useState<Transaction>(
     props.trans || {
       transdate: new Date(),
@@ -220,6 +220,7 @@ export default function EditTransPage(props: EditTransProps) {
                   });
                   const newTrans = await extractReceiptContent(file);
                   if (newTrans !== undefined) {
+                    newTrans.trans_id = curTrans.trans_id;
                     setCurTrans(newTrans);
                     setDateUpdateKey(Date.now());
                     setDialogParams({
@@ -375,32 +376,13 @@ export default function EditTransPage(props: EditTransProps) {
               noOkButton: true,
             });
             await fetch("/api/Transaction", {
-              method: "PUT",
+              method: curTrans.trans_id ? "POST" : "PUT",
               body: formData,
             });
-            setDialogParams({
-              open: false,
-            });
+            router.push("/viewtrans");
           }}
         >
           Submit
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => {
-            if (props.trans !== undefined) {
-              const formData = new FormData();
-              formData.append("transdata", JSON.stringify(curTrans));
-              if (receiptFile !== undefined)
-                formData.append("file", receiptFile);
-              fetch("/api/Transaction", {
-                method: "POST",
-                body: formData,
-              });
-            }
-          }}
-        >
-          Update
         </Button>
       </div>
     </div>
