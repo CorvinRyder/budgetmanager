@@ -5,6 +5,7 @@ import { TextField, Button, Switch, FormControlLabel } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Classes from "./pages.module.css";
 import AlertDialog from "@/components/AlertDialog";
+import NumberField from "@/components/NumberField";
 
 type ItemInputProps = {
   item: TransItem;
@@ -17,8 +18,6 @@ const ItemInput = function (props: ItemInputProps) {
     const newItem = { ...props.item };
     switch (key) {
       case "amount":
-        newItem.amount = parseFloat(newVal);
-        break;
       case "cashflow_id":
       case "trans_id":
         return;
@@ -36,11 +35,15 @@ const ItemInput = function (props: ItemInputProps) {
           onChangeHandler(evt.target.value, "item");
         }}
       />
-      <TextField
-        placeholder="Amount"
+      <NumberField
+        textFieldProps={{
+          placeholder: "Amount",
+        }}
         value={props.item.amount}
-        onChange={(evt) => {
-          onChangeHandler(evt.target.value, "amount");
+        onChange={(newValue) => {
+          const newItem = { ...props.item };
+          newItem.amount = newValue;
+          if (props.onChange !== undefined) props.onChange(newItem);
         }}
       />
       <TextField
@@ -293,12 +296,14 @@ export default function EditTransPage(props: EditTransProps) {
         />
       </div>
       <hr />
-      <TextField
-        placeholder="Sale tax"
-        value={curTrans.sale_tax}
-        onChange={(evt) => {
+      <NumberField
+        textFieldProps={{
+          placeholder: "Sale tax",
+        }}
+        value={curTrans.sale_tax || 0}
+        onChange={(newValue) => {
           const newTrans = { ...curTrans };
-          newTrans.sale_tax = parseInt(evt.target.value);
+          newTrans.sale_tax = newValue;
           setCurTrans(newTrans);
         }}
       />
