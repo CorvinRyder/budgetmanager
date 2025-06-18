@@ -375,11 +375,24 @@ export default function EditTransPage(props: EditTransProps) {
               ),
               noOkButton: true,
             });
-            await fetch("/api/Transaction", {
+            const result = await fetch("/api/Transaction", {
               method: curTrans.trans_id ? "POST" : "PUT",
               body: formData,
             });
-            router.push("/viewtrans");
+            if (result.status === 200) router.push("/viewtrans");
+            else {
+              setDialogParams({
+                open: true,
+                title: "Unable to save this transaction",
+                jsx: (
+                  <div>
+                    Please check the input and try again!
+                    <br />
+                    <div>{JSON.stringify(await result.json())}</div>
+                  </div>
+                ),
+              });
+            }
           }}
         >
           Submit
