@@ -3,21 +3,46 @@
 import AlertDialog from "@/components/AlertDialog";
 import moment from "moment";
 import { useEffect, useState } from "react";
+import TooltipSpan from "@/components/TooltipSpan";
+import Classes from "./viewtrans.module.css";
+import { Button } from "@mui/material";
 
 export default function ViewTrans() {
+  const [month, setMonth] = useState(new Date());
   const [updateKey, setUpdateKey] = useState(Date.now());
   const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
     {} as AlertDialogParams
   );
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
-    fetch("/api/Transaction", { method: "GET" })
+    fetch(`/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`, {
+      method: "GET",
+    })
       .then((r) => r.json())
       .then((r) => setTrans(r));
-  }, [updateKey]);
+  }, [updateKey, month]);
+
   return (
     <div>
       <AlertDialog params={dialogParams} />
+      <Button
+        variant="contained"
+        onClick={() => {
+          setMonth(moment(month).add(-1, "months").toDate());
+        }}
+      >
+        <span className="material-symbols-outlined">arrow_back</span>
+      </Button>
+      <span>{moment(month).format("YYYY-MM")}</span>
+      <Button
+        variant="contained"
+        onClick={() => {
+          setMonth(moment(month).add(1, "months").toDate());
+        }}
+      >
+        <span className="material-symbols-outlined">arrow_forward</span>
+      </Button>
+
       <table border={1} cellPadding={2}>
         <thead>
           <tr>
@@ -25,15 +50,13 @@ export default function ViewTrans() {
             <th>Location</th>
             <th>Receipt</th>
             <th>Items</th>
-            <th>Sub-total</th>
-            <th>Sale Tax</th>
             <th>Total</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {trans.map((i, j) => (
-            <tr key={j}>
+            <tr key={j} className={(i.total || 0) < 0 ? Classes.MoneyGain : ""}>
               <td>{moment(i.transdate).format("YYYY-MM-DD HH:mm:ss")}</td>
               <td>
                 {i.location ? (
@@ -62,13 +85,15 @@ export default function ViewTrans() {
                 {i.items &&
                   i.items.map((k, l) => (
                     <div key={l}>
-                      {k.item} (${k.amount})
+                      <TooltipSpan tooltip={k.remark}>
+                        {k.item} (${k.amount})
+                      </TooltipSpan>
                     </div>
                   ))}
               </td>
-              <td>{i.total && "$" + i.total}</td>
-              <td>{"$" + (i.sale_tax || 0)}</td>
-              <td>{"$" + ((i.total || 0) + (i.sale_tax || 0)).toFixed(2)}</td>
+              <td className={i.total ? Classes.NumberCell : ""}>
+                {i.total && "$" + Math.abs(i.total).toFixed(2)}
+              </td>
               <td>
                 <a href={`/edittrans?transid=${i.trans_id}`}>
                   <span className="material-symbols-outlined ActionBtn">

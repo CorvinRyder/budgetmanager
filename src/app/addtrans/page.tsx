@@ -30,7 +30,7 @@ const ItemInput = function (props: ItemInputProps) {
   return (
     <div>
       <TextField
-        placeholder="Item"
+        label="Item"
         value={props.item.item}
         onChange={(evt) => {
           onChangeHandler(evt.target.value, "item");
@@ -38,7 +38,7 @@ const ItemInput = function (props: ItemInputProps) {
       />
       <NumberField
         textFieldProps={{
-          placeholder: "Amount",
+          label: "Amount",
         }}
         value={props.item.amount}
         onChange={(newValue) => {
@@ -48,14 +48,14 @@ const ItemInput = function (props: ItemInputProps) {
         }}
       />
       <TextField
-        placeholder="Category"
+        label="Category"
         value={props.item.category}
         onChange={(evt) => {
           onChangeHandler(evt.target.value, "category");
         }}
       />
       <TextField
-        placeholder="Remark"
+        label="Remark"
         value={props.item.remark}
         onChange={(evt) => {
           onChangeHandler(evt.target.value, "remark");
@@ -78,9 +78,10 @@ type EditTransProps = {
   trans?: Transaction;
 };
 
-async function extractReceiptContent(file: File) {
+async function extractReceiptContent(file?: File, path?: string) {
   const formData = new FormData();
-  formData.append("file", file);
+  if (file !== undefined) formData.append("file", file);
+  else if (path !== undefined) formData.append("filepath", path);
   const readReceiptResult = await await fetch("/api/AI/ReadReceipt", {
     method: "POST",
     body: formData,
@@ -241,9 +242,29 @@ export default function EditTransPage(props: EditTransProps) {
             {!receiptUrl ? (
               <div>No receipt uploaded or selected</div>
             ) : (
-              <img src={receiptUrl} />
+              <span>
+                <img src={receiptUrl} />
+              </span>
             )}
           </div>
+          {receiptUrl && (
+            <Button
+              variant="contained"
+              onClick={async () => {
+                const newTrans = await extractReceiptContent(
+                  undefined,
+                  receiptUrl
+                );
+                if (newTrans !== undefined) {
+                  newTrans.trans_id = curTrans.trans_id;
+                  setCurTrans(newTrans);
+                  setDateUpdateKey(Date.now());
+                }
+              }}
+            >
+              Re-analyze with AI
+            </Button>
+          )}
         </div>
         {/* {receiptFile && (
           <span
@@ -258,53 +279,33 @@ export default function EditTransPage(props: EditTransProps) {
         )} */}
       </div>
       <hr />
-      <div>
-        <TextField
-          key={dateUpdateKey}
-          placeholder="Date Time"
-          defaultValue={moment(curTrans.transdate).format(
-            "YYYY-MM-DD HH:mm:ss"
-          )}
-          onBlur={(evt) => {
-            let dateCheck = moment(evt.target.value);
-            if (!dateCheck.isValid) dateCheck = moment();
-            const newTrans = { ...curTrans };
-            newTrans.transdate = dateCheck.toDate();
-            setCurTrans(newTrans);
-          }}
-        />
-      </div>
-      <hr />
-      <div>
-        <TextField
-          placeholder="Store"
-          value={curTrans.store}
-          onChange={(evt) => {
-            const newTrans = { ...curTrans };
-            newTrans.store = evt.target.value;
-            setCurTrans(newTrans);
-          }}
-        />
-        <br />
-        <TextField
-          placeholder="Store Address"
-          value={curTrans.location}
-          onChange={(evt) => {
-            const newTrans = { ...curTrans };
-            newTrans.location = evt.target.value;
-            setCurTrans(newTrans);
-          }}
-        />
-      </div>
-      <hr />
-      <NumberField
-        textFieldProps={{
-          placeholder: "Sale tax",
-        }}
-        value={curTrans.sale_tax || 0}
-        onChange={(newValue) => {
+      <TextField
+        key={dateUpdateKey}
+        label="Date Time"
+        defaultValue={moment(curTrans.transdate).format("YYYY-MM-DD HH:mm:ss")}
+        onBlur={(evt) => {
+          let dateCheck = moment(evt.target.value);
+          if (!dateCheck.isValid) dateCheck = moment();
           const newTrans = { ...curTrans };
-          newTrans.sale_tax = newValue;
+          newTrans.transdate = dateCheck.toDate();
+          setCurTrans(newTrans);
+        }}
+      />
+      <TextField
+        label="Store"
+        value={curTrans.store}
+        onChange={(evt) => {
+          const newTrans = { ...curTrans };
+          newTrans.store = evt.target.value;
+          setCurTrans(newTrans);
+        }}
+      />
+      <TextField
+        label="Store Address"
+        value={curTrans.location}
+        onChange={(evt) => {
+          const newTrans = { ...curTrans };
+          newTrans.location = evt.target.value;
           setCurTrans(newTrans);
         }}
       />

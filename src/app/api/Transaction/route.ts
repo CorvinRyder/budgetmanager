@@ -3,21 +3,30 @@ import { connectToDatabase } from "@/db";
 import getTransactions from "./getTransaction";
 import sql from "mssql";
 import fs from "fs/promises";
+import moment from "moment";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const transIdStr = searchParams.get("transid");
+  const yearmonth = searchParams.get("yearmonth");
   let transId = undefined;
   if (transIdStr !== null) {
     transId = parseInt(transIdStr);
     if (isNaN(transId)) {
       return NextResponse.json(
         { message: "Wrong transaction ID type!" },
-        { status: 500 } // 👈 Set HTTP status code
+        { status: 400 }
       );
     }
   }
-  return NextResponse.json(await getTransactions(transId));
+  let dateParsedDate = undefined;
+  if (yearmonth !== null) {
+    const dateParsed = moment(yearmonth);
+    if (!dateParsed.isValid)
+      return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
+    dateParsedDate = dateParsed.toDate();
+  }
+  return NextResponse.json(await getTransactions(transId, dateParsedDate));
 }
 
 async function updateCashflow(
@@ -35,7 +44,7 @@ async function updateCashflow(
 
   const table = new sql.Table("bm_cashflow");
   table.columns.add("trans_id", sql.Int, { nullable: false });
-  table.columns.add("amount", sql.Money, { nullable: false });
+  table.columns.add("amount", sql.Money, { nullable: true });
   table.columns.add("item", sql.NVarChar, { nullable: false });
   table.columns.add("category", sql.VarChar, { nullable: false });
   table.columns.add("remark", sql.NVarChar);
@@ -116,7 +125,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   } catch (err) {
     console.debug(err);
-    await trans.rollback();
+    await rollbackTrans(trans);
     return NextResponse.json(
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
@@ -184,7 +193,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.debug(err);
-    await trans.rollback();
+    await rollbackTrans(trans);
     return NextResponse.json(
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
@@ -241,7 +250,13 @@ export async function DELETE(req: NextRequest) {
       { status: 200 }
     );
   } catch (err) {
-    await trans.rollback();
+    await rollbackTrans(trans);
     return NextResponse.json({ message: err }, { status: 500 });
   }
+}
+
+async function rollbackTrans(trans: sql.Transaction) {
+  try {
+    await trans.rollback();
+  } catch (err) {}
 }

@@ -1,7 +1,9 @@
 import { connectToDatabase } from "@/db";
+import sql from "mssql";
 
 export default function getTransactions(
-  transId?: number
+  transId?: number,
+  month?: Date
 ): Promise<Array<Transaction>> {
   return new Promise(async (resolve) => {
     const pool = await connectToDatabase();
@@ -23,12 +25,17 @@ export default function getTransactions(
     (select cast(sum(amount) as numeric(5,2))
     from foodmgmt.dbo.bm_cashflow where 
     foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
-    from foodmgmt.dbo.bm_transaction t1 `; //order by transdate desc
+    from foodmgmt.dbo.bm_transaction t1`;
     if (transId !== undefined) {
       sqlStatement += " where t1.trans_id = @transid and deleted is null";
       sqlReq.input("transid", transId);
-    } else sqlStatement += " where deleted is null ";
-    sqlStatement += " order by transdate desc";
+    } else {
+      if (month === undefined) month = new Date();
+      sqlReq.input("yearmonth", sql.DateTime, month);
+      sqlStatement +=
+        " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-1";
+    }
+    sqlStatement += "  and deleted is null order by transdate desc";
     const transResult = await sqlReq.query(sqlStatement);
     const transactions: Array<Transaction> = transResult.recordset;
     transactions.forEach((i) => {
