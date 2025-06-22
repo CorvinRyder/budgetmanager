@@ -7,12 +7,22 @@ import Classes from "./pages.module.css";
 import AlertDialog from "@/components/AlertDialog";
 import NumberField from "@/components/NumberField";
 import { useRouter } from "next/navigation";
+import ComboBox from "@/components/ComboBox";
 
 type ItemInputProps = {
   item: TransItem;
   onChange?: (newV: TransItem) => void;
   onDelete?: () => void;
 };
+
+const itemCategories: SingleValue<string>[] = [
+  { value: "Eat Out" },
+  { value: "Grocery" },
+  { value: "Misc." },
+  { value: "Salary" },
+  { value: "Snacks" },
+  { value: "Tip and Tax" },
+];
 
 const ItemInput = function (props: ItemInputProps) {
   const onChangeHandler = function (newVal: string, key: keyof TransItem) {
@@ -28,7 +38,7 @@ const ItemInput = function (props: ItemInputProps) {
     if (props.onChange !== undefined) props.onChange(newItem);
   };
   return (
-    <div>
+    <div style={{ margin: "10px 0" }}>
       <TextField
         label="Item"
         value={props.item.item}
@@ -47,13 +57,17 @@ const ItemInput = function (props: ItemInputProps) {
           if (props.onChange !== undefined) props.onChange(newItem);
         }}
       />
-      <TextField
-        label="Category"
-        value={props.item.category}
-        onChange={(evt) => {
-          onChangeHandler(evt.target.value, "category");
-        }}
-      />
+      <div style={{ display: "inline-flex", verticalAlign: "middle" }}>
+        <ComboBox<SingleValue<string>>
+          label="Category"
+          options={itemCategories}
+          value={{ value: props.item.category }}
+          displayValue="value"
+          onChange={(newValue) => {
+            onChangeHandler(newValue.value, "category");
+          }}
+        />
+      </div>
       <TextField
         label="Remark"
         value={props.item.remark}

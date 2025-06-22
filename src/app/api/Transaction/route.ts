@@ -258,5 +258,5 @@ export async function DELETE(req: NextRequest) {
 async function rollbackTrans(trans: sql.Transaction) {
   try {
     await trans.rollback();
-  } catch (err) {}
+  } catch {}
 }
