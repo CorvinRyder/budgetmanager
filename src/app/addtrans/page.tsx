@@ -22,15 +22,21 @@ type ItemInputProps = {
   onDelete?: () => void;
 };
 
-const itemCategories: SingleValue<string>[] = [
-  { value: "Grocery" },
-  { value: "Eat Out" },
-  { value: "Snacks" },
-  { value: "Traveling" },
-  { value: "Misc." },
-  { value: "Tip and Tax" },
-  { value: "Salary" },
+const itemCategories: ComboxBoxOption<string>[] = [
+  { value: "G", displayValue: "Grocery" },
+  { value: "G1", displayValue: "Snacks" },
+  { value: "E", displayValue: "Eat Out" },
+  { value: "T", displayValue: "Traveling" },
+  { value: "M", displayValue: "Misc." },
+  { value: "M1", displayValue: "Tip and Tax" },
+  { value: "M2", displayValue: "Salary" },
 ];
+
+const itemCategoriesKeyValue: KeyValueList<ComboxBoxOption<string>> =
+  itemCategories.reduce(
+    (p, c) => ((p[c.value] = c), p),
+    {} as KeyValueList<ComboxBoxOption<string>>
+  );
 
 const ItemInput = function (props: ItemInputProps) {
   const onChangeHandler = function (newVal: string, key: keyof TransItem) {
@@ -66,11 +72,11 @@ const ItemInput = function (props: ItemInputProps) {
         }}
       />
       <div style={{ display: "inline-flex", verticalAlign: "middle" }}>
-        <ComboBox<SingleValue<string>>
+        <ComboBox<ComboxBoxOption<string>>
           label="Category"
           options={itemCategories}
-          value={{ value: props.item.category }}
-          displayValue="value"
+          value={itemCategoriesKeyValue[props.item.category]}
+          displayValue="displayValue"
           onChange={(newValue) => {
             onChangeHandler(newValue.value, "category");
           }}

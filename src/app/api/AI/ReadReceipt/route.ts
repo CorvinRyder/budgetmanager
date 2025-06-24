@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
+import { connectToDatabase } from "@/db";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -15,6 +16,20 @@ export async function POST(req: NextRequest) {
     );
 
   try {
+    const pool = await connectToDatabase();
+    const trans = pool.transaction();
+    await trans.begin();
+    const sqlReq = trans.request();
+
+    const dbResult = await sqlReq.query(
+      `select cat_code, ai_desc from bm_categories`
+    );
+    const resultCasted: Array<{ cat_code: string; ai_desc: string }> =
+      dbResult.recordset;
+    const catStr: string[] = resultCasted.map(
+      (i) => `- ${i.ai_desc} belongs to ${i.cat_code}`
+    );
+
     const ai = new GoogleGenAI({
       apiKey: "AIzaSyC2PQxaJhJ8a0UsT6ImS5RUV9eYtv4l4Bg",
     });
@@ -70,13 +85,7 @@ export async function POST(req: NextRequest) {
 					Please use ISO format for the date time.
           Can you try to guess what the items actually are, and put your guess to a key called "remark" of each item?
           Please categorize the item, and put it in the "category" field of each item:
-           - Groceries for the main meals (breakfast, lunch and dinner) belong to "Grocery"
-           - Meal that was had or bought from any restaurant belongs to "Eat Out"
-           - Items that were bought from the online stores belong to "Online Shopping"
-           - Snacks and food that doesn't belong to the main meals belong to "Snacks"
-           - Items that is for entertainment, like admission fee or toys, belong to "Entertainment"
-           - Tips and Tax belong to "Tip and Tax"
-           - For anything that can't fit in any of the categories mentioned about, put them under "Misc."
+          ${catStr.join("\r\n")}
           For address, please try to split the address parts with comma.
 					If the image is not a receipt, please stop analyzing the item immediately and return the string "NOT_A_RECEIPT"`,
         },

@@ -130,6 +130,8 @@ export async function PUT(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
+  } finally {
+    pool.close();
   }
 }
 
@@ -198,6 +200,8 @@ export async function POST(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
+  } finally {
+    pool.close();
   }
 }
 
@@ -252,6 +256,8 @@ export async function DELETE(req: NextRequest) {
   } catch (err) {
     await rollbackTrans(trans);
     return NextResponse.json({ message: err }, { status: 500 });
+  } finally {
+    pool.close();
   }
 }
 

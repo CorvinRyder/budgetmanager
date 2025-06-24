@@ -46,7 +46,7 @@ export default function SpendingBreakdown(props: SpendingBreakdownProps) {
           <div
             key={j}
             style={{ width: `${(i.percent || 0) * 100}%` }}
-            className={(i.rate || 0) > 1 ? Classes.over : ""}
+            className={(i.rate || 0) > 1 ? Classes.Over : Classes.NotOver}
           >
             <TooltipSpan tooltip={`Spending: $${i.amount} / $${i.allowance}`}>
               {i.category}

@@ -5,7 +5,7 @@
   border: 1px solid #aaa;
   border-radius: 5px;
   display: flex;
-  background-color: #dcf8ff;
+  background-color: #e5ffdc;
 }
 
 .BreakdownContainer > DIV {
@@ -13,6 +13,10 @@
   padding: 5px;
 }
 
-.BreakdownContainer > DIV.over {
+.BreakdownContainer > DIV.Over {
   background-color: #ffdce1;
+}
+
+.BreakdownContainer > DIV.NotOver {
+  background-color: #dcf8ff;
 }

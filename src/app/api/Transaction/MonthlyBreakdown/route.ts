@@ -17,16 +17,25 @@ export async function GET(req: NextRequest) {
   const sqlReq = trans.request();
   sqlReq.input("yearmonth", dateParsedDate);
   const result = await sqlReq.query(`
-		select category, t1.amount, bb.amount as allowance,(t1.amount / bb.amount) as rate from (
-		select category, sum(amount) as amount
-		from bm_cashflow bc 
-		inner join bm_transaction bt on bc.trans_id = bt.trans_id
-		where bt.transdate 
-		between datetrunc(MONTH, CAST(@yearmonth as datetime)) and 
-		dateadd(Month, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-1
-		and bt.deleted is null
-		group by category) t1
-		left join bm_budgetplanitems bb on t1.category = bb.item`);
+    select bc.category , t1.amount, bb.amount as allowance, (t1.amount / bb.amount) as rate
+    from (
+      select category, sum(amount) as amount
+      from (
+        select LEFT(category, 1) as category, sum(amount) as amount
+        from bm_cashflow bc 
+        inner join bm_transaction bt on bc.trans_id = bt.trans_id
+        where bt.transdate 
+        between datetrunc(MONTH, CAST(@yearmonth as datetime)) and 
+        dateadd(MONTH, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-1
+        and bt.deleted is null
+        group by category
+      ) t2
+      group by t2.category
+    ) t1
+    left join bm_budgetplanitems bb on t1.category = bb.item
+    left join bm_categories bc on t1.category = bc.cat_code
+    where bc.category is not null`);
+  pool.close();
   return NextResponse.json(
     result.recordset,
     { status: 200 } // 👈 Set HTTP status code
