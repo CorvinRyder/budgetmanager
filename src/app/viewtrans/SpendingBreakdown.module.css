@@ -1,0 +1,18 @@
+.BreakdownContainer {
+  width: 50%;
+  height: 30px;
+  margin: 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  display: flex;
+  background-color: #dcf8ff;
+}
+
+.BreakdownContainer > DIV {
+  border-right: 1px solid #aaa;
+  padding: 5px;
+}
+
+.BreakdownContainer > DIV.over {
+  background-color: #ffdce1;
+}

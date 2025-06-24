@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import TooltipSpan from "@/components/TooltipSpan";
 import Classes from "./viewtrans.module.css";
 import { Button } from "@mui/material";
+import SpendingBreakdown from "./SpendingBreakdown";
 
 export default function ViewTrans() {
   const [month, setMonth] = useState(new Date());
@@ -15,29 +16,17 @@ export default function ViewTrans() {
   );
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
-    Promise.all([
-      fetch(
-        `/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`,
-        {
-          method: "GET",
-        }
-      ),
-      fetch(
-        `/api/Transaction/MonthlyBreakdown?date=${moment(month).format(
-          "YYYY-MM-DD"
-        )}`,
-        {
-          method: "GET",
-        }
-      ),
-    ]).then(async (r) => {
-      setTrans((await r[0].json()) as Transaction[]);
+    fetch(`/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`, {
+      method: "GET",
+    }).then(async (r) => {
+      setTrans((await r.json()) as Transaction[]);
     });
   }, [updateKey, month]);
 
   return (
     <div>
       <AlertDialog params={dialogParams} />
+      <SpendingBreakdown updateKey={updateKey} month={month} />
       <Button
         variant="contained"
         onClick={() => {

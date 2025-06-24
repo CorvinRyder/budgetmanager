@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/db";
-import sql from "mssql";
-import fs from "fs/promises";
 import moment from "moment";
 
 export async function GET(req: NextRequest) {
@@ -19,7 +17,7 @@ export async function GET(req: NextRequest) {
   const sqlReq = trans.request();
   sqlReq.input("yearmonth", dateParsedDate);
   const result = await sqlReq.query(`
-		select category, t1.amount, (t1.amount / bb.amount) as rate from (
+		select category, t1.amount, bb.amount as allowance,(t1.amount / bb.amount) as rate from (
 		select category, sum(amount) as amount
 		from bm_cashflow bc 
 		inner join bm_transaction bt on bc.trans_id = bt.trans_id
