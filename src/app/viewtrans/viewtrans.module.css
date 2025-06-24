@@ -5,3 +5,16 @@
 .NumberCell {
   text-align: right;
 }
+
+.TransTable {
+  border: 1px solid #aaa;
+}
+
+.TransTable > thead {
+  background-color: rgb(210, 255, 245);
+}
+
+.TransTable TD {
+  padding: 5px;
+  border: 1px solid #aaa;
+}

@@ -15,11 +15,24 @@ export default function ViewTrans() {
   );
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
-    fetch(`/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`, {
-      method: "GET",
-    })
-      .then((r) => r.json())
-      .then((r) => setTrans(r));
+    Promise.all([
+      fetch(
+        `/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`,
+        {
+          method: "GET",
+        }
+      ),
+      fetch(
+        `/api/Transaction/MonthlyBreakdown?date=${moment(month).format(
+          "YYYY-MM-DD"
+        )}`,
+        {
+          method: "GET",
+        }
+      ),
+    ]).then(async (r) => {
+      setTrans((await r[0].json()) as Transaction[]);
+    });
   }, [updateKey, month]);
 
   return (
@@ -43,7 +56,7 @@ export default function ViewTrans() {
         <span className="material-symbols-outlined">arrow_forward</span>
       </Button>
 
-      <table border={1} cellPadding={2}>
+      <table className={Classes.TransTable}>
         <thead>
           <tr>
             <th>Date</th>

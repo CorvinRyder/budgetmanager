@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   let dateParsedDate = undefined;
   if (yearmonth !== null) {
     const dateParsed = moment(yearmonth);
-    if (!dateParsed.isValid)
+    if (!dateParsed.isValid())
       return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
     dateParsedDate = dateParsed.toDate();
   }

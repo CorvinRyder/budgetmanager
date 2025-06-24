@@ -2,7 +2,14 @@
 
 import moment from "moment";
 import { TextField, Button, Switch, FormControlLabel } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Classes from "./pages.module.css";
 import AlertDialog from "@/components/AlertDialog";
 import NumberField from "@/components/NumberField";
@@ -16,12 +23,13 @@ type ItemInputProps = {
 };
 
 const itemCategories: SingleValue<string>[] = [
-  { value: "Eat Out" },
   { value: "Grocery" },
-  { value: "Misc." },
-  { value: "Salary" },
+  { value: "Eat Out" },
   { value: "Snacks" },
+  { value: "Traveling" },
+  { value: "Misc." },
   { value: "Tip and Tax" },
+  { value: "Salary" },
 ];
 
 const ItemInput = function (props: ItemInputProps) {
@@ -92,7 +100,23 @@ type EditTransProps = {
   trans?: Transaction;
 };
 
-async function extractReceiptContent(file?: File, path?: string) {
+async function extractReceiptContent(
+  setDialogParams: Dispatch<SetStateAction<AlertDialogParams>>,
+  file?: File,
+  path?: string
+) {
+  setDialogParams({
+    open: true,
+    title: "Analyzing Receipt Content",
+    jsx: (
+      <div>
+        <span className="Loading material-symbols-outlined">sync</span>
+        Analyzing the receipt with AI...
+      </div>
+    ),
+    noOkButton: true,
+  });
+
   const formData = new FormData();
   if (file !== undefined) formData.append("file", file);
   else if (path !== undefined) formData.append("filepath", path);
@@ -100,7 +124,12 @@ async function extractReceiptContent(file?: File, path?: string) {
     method: "POST",
     body: formData,
   });
-  if (readReceiptResult.status === 400) {
+  if (readReceiptResult.status !== 200) {
+    setDialogParams({
+      open: true,
+      title: "Analyzing Receipt Content",
+      jsx: <div>The uploaded image is not a receipt!</div>,
+    });
     return;
   }
   const receiptList: ReceiptContent = await readReceiptResult.json();
@@ -119,6 +148,9 @@ async function extractReceiptContent(file?: File, path?: string) {
         } as TransItem)
     ),
   };
+  setDialogParams({
+    open: false,
+  });
   return newTrans;
 }
 
@@ -220,34 +252,16 @@ export default function EditTransPage(props: EditTransProps) {
             onClick={() =>
               uploadReceiptDialog(async (file, useAI) => {
                 if (file !== undefined && useAI) {
-                  setDialogParams({
-                    open: true,
-                    title: "Analyzing Receipt Content",
-                    jsx: (
-                      <div>
-                        <span className="Loading material-symbols-outlined">
-                          sync
-                        </span>
-                        Analyzing the receipt with AI...
-                      </div>
-                    ),
-                    noOkButton: true,
-                  });
-                  const newTrans = await extractReceiptContent(file);
+                  const newTrans = await extractReceiptContent(
+                    setDialogParams,
+                    file
+                  );
                   if (newTrans !== undefined) {
                     newTrans.trans_id = curTrans.trans_id;
                     setCurTrans(newTrans);
                     setDateUpdateKey(Date.now());
-                    setDialogParams({
-                      open: false,
-                    });
+
                     setReceiptFile(file);
-                  } else {
-                    setDialogParams({
-                      open: true,
-                      title: "Analyzing Receipt Content",
-                      jsx: <div>The uploaded image is not a receipt!</div>,
-                    });
                   }
                 } else setReceiptFile(file);
               })
@@ -266,6 +280,7 @@ export default function EditTransPage(props: EditTransProps) {
               variant="contained"
               onClick={async () => {
                 const newTrans = await extractReceiptContent(
+                  setDialogParams,
                   undefined,
                   receiptUrl
                 );
@@ -374,40 +389,64 @@ export default function EditTransPage(props: EditTransProps) {
         <Button
           variant="contained"
           onClick={async () => {
-            const formData = new FormData();
-            formData.append("transdata", JSON.stringify(curTrans));
-            if (receiptFile !== undefined) formData.append("file", receiptFile);
             setDialogParams({
               open: true,
-              title: "Saving the Transaction Record",
+              title: "Confirm to Save the Transaction",
               jsx: (
                 <div>
-                  <span className="Loading material-symbols-outlined">
-                    sync
-                  </span>
-                  Saving the transaction record to the database...
+                  <p>
+                    Are you sure to save this transaction? Please make sure the
+                    information is correct, especially if it is the result of AI
+                    analysis.
+                  </p>
+                  <br />
+                  <p>
+                    Date of transaction:{" "}
+                    <b>
+                      {moment(curTrans.transdate).format("YYYY-MM-DD HH:mm:ss")}
+                    </b>
+                  </p>
                 </div>
               ),
-              noOkButton: true,
+              async OnDialogOk() {
+                const formData = new FormData();
+                formData.append("transdata", JSON.stringify(curTrans));
+                if (receiptFile !== undefined)
+                  formData.append("file", receiptFile);
+                setDialogParams({
+                  open: true,
+                  title: "Saving the Transaction Record",
+                  jsx: (
+                    <div>
+                      <span className="Loading material-symbols-outlined">
+                        sync
+                      </span>
+                      Saving the transaction record to the database...
+                    </div>
+                  ),
+                  noOkButton: true,
+                });
+                const result = await fetch("/api/Transaction", {
+                  method: curTrans.trans_id ? "POST" : "PUT",
+                  body: formData,
+                });
+                if (result.status === 200) router.push("/viewtrans");
+                else {
+                  setDialogParams({
+                    open: true,
+                    title: "Unable to save this transaction",
+                    jsx: (
+                      <div>
+                        Please check the input and try again!
+                        <br />
+                        <div>{JSON.stringify(await result.json())}</div>
+                      </div>
+                    ),
+                  });
+                }
+              },
+              OnDialogCancel() {},
             });
-            const result = await fetch("/api/Transaction", {
-              method: curTrans.trans_id ? "POST" : "PUT",
-              body: formData,
-            });
-            if (result.status === 200) router.push("/viewtrans");
-            else {
-              setDialogParams({
-                open: true,
-                title: "Unable to save this transaction",
-                jsx: (
-                  <div>
-                    Please check the input and try again!
-                    <br />
-                    <div>{JSON.stringify(await result.json())}</div>
-                  </div>
-                ),
-              });
-            }
           }}
         >
           Submit
