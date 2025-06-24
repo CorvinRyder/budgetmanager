@@ -20,3 +20,9 @@
 .BreakdownContainer > DIV.NotOver {
   background-color: #dcf8ff;
 }
+
+@media (max-aspect-ratio: 0.999) {
+  .BreakdownContainer {
+    width: 100%;
+  }
+}

@@ -26,7 +26,6 @@ export default function ViewTrans() {
   return (
     <div>
       <AlertDialog params={dialogParams} />
-      <SpendingBreakdown updateKey={updateKey} month={month} />
       <Button
         variant="contained"
         onClick={() => {
@@ -44,7 +43,7 @@ export default function ViewTrans() {
       >
         <span className="material-symbols-outlined">arrow_forward</span>
       </Button>
-
+      <SpendingBreakdown updateKey={updateKey} month={month} />
       <table className={Classes.TransTable}>
         <thead>
           <tr>
