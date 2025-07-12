@@ -13,12 +13,37 @@
   padding: 5px;
 }
 
-.BreakdownContainer > DIV.Over {
+DIV:last-child.Remaining {
+  background-color: #ecffdc;
+}
+
+DIV.Over {
   background-color: #ffdce1;
 }
 
-.BreakdownContainer > DIV.NotOver {
+DIV.NotOver {
   background-color: #dcf8ff;
+}
+
+.categoryBar h3 {
+  margin-bottom: 10px;
+}
+
+.barChart {
+  display: flex;
+  height: 30px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #aaa;
+}
+
+.barSegment {
+  height: 100%;
+  color: rgb(0, 0, 0);
+  font-size: 12px;
+  text-align: center;
+  line-height: 30px;
+  border-right: 1px solid #aaa;
 }
 
 @media (max-aspect-ratio: 0.999) {

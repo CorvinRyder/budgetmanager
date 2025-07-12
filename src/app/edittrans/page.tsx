@@ -1,19 +1,31 @@
-import EditTransPage from "../addtrans/page";
-import getTransactions from "../api/Transaction/getTransaction";
+"use client";
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  let curTrans = undefined;
-  const { transid } = await searchParams;
-  if (transid) {
-    const transId = parseInt(transid as string);
-    if (!isNaN(transId)) {
-      const queryResult = await getTransactions(transId);
-      curTrans = queryResult?.[0];
+import { useEffect, useState } from "react";
+import EditTransPage from "../addtrans/TransEditForm";
+
+export default function Page() {
+  const [curTrans, setCurTrans] = useState<Transaction>();
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const transid = searchParams.get("transid");
+    if (transid) {
+      const transId = parseInt(transid as string);
+      if (!isNaN(transId)) {
+        fetch("/api/Transaction?transid=" + transId, {
+          method: "GET",
+        }).then(async (r) => {
+          const transJson = (await r.json()) as Transaction[];
+          setCurTrans(transJson[0]);
+        });
+      }
     }
-  }
-  return <EditTransPage trans={curTrans} />;
+  }, []);
+  return curTrans ? (
+    <EditTransPage trans={curTrans} />
+  ) : (
+    <div>
+      <span className="Loading material-symbols-outlined">sync</span>
+      Loading the old transaction...
+    </div>
+  );
 }

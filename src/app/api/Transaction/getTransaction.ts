@@ -33,7 +33,7 @@ export default function getTransactions(
       if (month === undefined) month = new Date();
       sqlReq.input("yearmonth", sql.DateTime, month);
       sqlStatement +=
-        " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-1";
+        " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-0.00001";
     }
     sqlStatement += "  and deleted is null order by transdate desc";
     const transResult = await sqlReq.query(sqlStatement);

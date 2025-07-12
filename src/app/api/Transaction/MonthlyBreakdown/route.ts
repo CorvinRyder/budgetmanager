@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         inner join bm_transaction bt on bc.trans_id = bt.trans_id
         where bt.transdate 
         between datetrunc(MONTH, CAST(@yearmonth as datetime)) and 
-        dateadd(MONTH, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-1
+        dateadd(MONTH, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-0.00001
         and bt.deleted is null
         group by category
       ) t2

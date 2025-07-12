@@ -4,9 +4,9 @@ import AlertDialog from "@/components/AlertDialog";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import TooltipSpan from "@/components/TooltipSpan";
-import Classes from "./viewtrans.module.css";
-import { Button } from "@mui/material";
+import styles from "./viewtrans.module.css";
 import SpendingBreakdown from "./SpendingBreakdown";
+import Link from "next/link";
 
 export default function ViewTrans() {
   const [month, setMonth] = useState(new Date());
@@ -24,27 +24,35 @@ export default function ViewTrans() {
   }, [updateKey, month]);
 
   return (
-    <div>
+    <div className={styles.dashboard}>
       <AlertDialog params={dialogParams} />
-      <Button
-        variant="contained"
-        onClick={() => {
-          setMonth(moment(month).add(-1, "months").toDate());
-        }}
-      >
-        <span className="material-symbols-outlined">arrow_back</span>
-      </Button>
-      <span>{moment(month).format("YYYY-MM")}</span>
-      <Button
-        variant="contained"
-        onClick={() => {
-          setMonth(moment(month).add(1, "months").toDate());
-        }}
-      >
-        <span className="material-symbols-outlined">arrow_forward</span>
-      </Button>
       <SpendingBreakdown updateKey={updateKey} month={month} />
-      <table className={Classes.TransTable}>
+      {/* Month navigation */}
+
+      <div className={styles.monthNav}>
+        <button
+          className={styles.navBtn}
+          onClick={() => {
+            setMonth(moment(month).add(-1, "months").toDate());
+          }}
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <span className={styles.monthLabel}>
+          {moment(month).format("YYYY-MM")}
+        </span>
+        <button
+          className={styles.navBtn}
+          onClick={() => {
+            setMonth(moment(month).add(1, "months").toDate());
+          }}
+        >
+          <span className="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </div>
+
+      {/* Transaction Table */}
+      <table className={styles.transactionTable}>
         <thead>
           <tr>
             <th>Date</th>
@@ -57,7 +65,7 @@ export default function ViewTrans() {
         </thead>
         <tbody>
           {trans.map((i, j) => (
-            <tr key={j} className={(i.total || 0) < 0 ? Classes.MoneyGain : ""}>
+            <tr key={j}>
               <td>{moment(i.transdate).format("YYYY-MM-DD HH:mm:ss")}</td>
               <td>
                 {i.location ? (
@@ -92,15 +100,13 @@ export default function ViewTrans() {
                     </div>
                   ))}
               </td>
-              <td className={i.total ? Classes.NumberCell : ""}>
-                {i.total && "$" + Math.abs(i.total).toFixed(2)}
-              </td>
+              <td>{i.total && "$" + Math.abs(i.total).toFixed(2)}</td>
               <td>
-                <a href={`/edittrans?transid=${i.trans_id}`}>
+                <Link href={`/edittrans?transid=${i.trans_id}`}>
                   <span className="material-symbols-outlined ActionBtn">
                     edit
                   </span>
-                </a>
+                </Link>
                 <a
                   onClick={() => {
                     setDialogParams({
