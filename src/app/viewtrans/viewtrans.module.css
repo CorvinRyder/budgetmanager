@@ -22,6 +22,10 @@
   cursor: pointer;
 }
 
+.navBtn:disabled {
+  background-color: #ccc;
+}
+
 .monthLabel {
   font-weight: bold;
   font-size: 16px;

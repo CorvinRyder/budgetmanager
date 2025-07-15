@@ -22,7 +22,12 @@ DIV.Over {
 }
 
 DIV.NotOver {
-  background-color: #dcf8ff;
+  background-color: #dcf5ff;
+}
+
+DIV.OverSpent {
+  background-color: #f00;
+  color: #fff;
 }
 
 .categoryBar h3 {

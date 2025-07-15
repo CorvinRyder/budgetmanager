@@ -4,6 +4,12 @@ import moment from "moment";
 import { useEffect, useState } from "react";
 import styles from "./SpendingBreakdown.module.css";
 import TooltipSpan from "@/components/TooltipSpan";
+
+import ColorTransition from "@/utils/ColorTransition";
+
+const NoOverSpend = "dcf5ff";
+const OverSpend = "ffdce1";
+
 type SpendingBreakdownProps = {
   month: Date;
   updateKey: number;
@@ -29,6 +35,10 @@ export default function SpendingBreakdown(props: SpendingBreakdownProps) {
       { method: "GET" }
     ).then(async (r) => {
       const items: Array<BreakdownItem> = await r.json();
+      if (items.length === 0) {
+        setBreakdown([]);
+        return;
+      }
       const total = items.reduce((p, c) => (p += c.allowance), 0);
       const totalSpend = items.reduce((p, c) => (p += c.amount), 0);
       items.forEach((i) => (i.percent = i.amount / total));
@@ -37,43 +47,54 @@ export default function SpendingBreakdown(props: SpendingBreakdownProps) {
         amount: total - totalSpend,
         allowance: total - totalSpend,
         rate: 0,
-        percent: (total - totalSpend) / total,
+        percent: Math.abs(total - totalSpend) / total,
       });
       console.debug(items);
       setBreakdown(items);
     });
   }, [month, updateKey]);
 
-  return breakdown.length === 0 ? (
-    <div>Loading...</div>
-  ) : (
-    <div className={styles.categoryBar}>
-      {/* Category Bar */}
+  return (
+    <div>
       <h3>Spending by Category</h3>
-      <div className={styles.barChart}>
-        {breakdown.map((i, j) => (
-          <div
-            key={j}
-            style={{ width: `${(i.percent || 0) * 100}%` }}
-            className={
-              styles.barSegment +
-              " " +
-              ((i.rate || 0) > 1 ? styles.Over : styles.NotOver) +
-              " " +
-              (i.category === "Remaining" ? styles.Remaining : "")
-            }
-          >
-            <TooltipSpan
-              tooltip={`${
-                i.category === "Remaining" ? "Remaining" : "Spending"
-              }: $${i.amount} / $${i.allowance}`}
-            >
-              {i.category}
-            </TooltipSpan>
+
+      {breakdown.length === 0 ? (
+        <div>No Data</div>
+      ) : (
+        <div className={styles.categoryBar}>
+          <div className={styles.barChart}>
+            {breakdown.map((i, j) => (
+              <div
+                key={j}
+                style={{
+                  width: `${(i.percent || 0) * 100}%`,
+                  backgroundColor:
+                    i.category !== "Remaining" && i.rate > 0.5
+                      ? ColorTransition(NoOverSpend, OverSpend, i.rate * 100)
+                      : "",
+                }}
+                className={
+                  styles.barSegment +
+                  " " +
+                  (i.category === "Remaining"
+                    ? i.amount > 0
+                      ? styles.Remaining
+                      : styles.OverSpent
+                    : (i.rate || 0) < 0.5
+                    ? styles.NotOver
+                    : (i.rate || 0) > 1
+                    ? styles.Over
+                    : "")
+                }
+              >
+                <TooltipSpan tooltip={`$${i.amount} / $${i.allowance}`}>
+                  {i.amount > 0 ? i.category : "Overspend"}
+                </TooltipSpan>
+              </div>
+            ))}
           </div>
-        ))}
-        {/* Example bar segments — replace with dynamic data */}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
