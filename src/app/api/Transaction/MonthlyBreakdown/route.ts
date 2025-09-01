@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const yearmonth = searchParams.get("date");
   let dateParsedDate = undefined;
-  const dateParsed = moment(yearmonth);
+  const dateParsed = moment.utc(yearmonth);
   if (!dateParsed.isValid())
     return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
   dateParsedDate = dateParsed.toDate();

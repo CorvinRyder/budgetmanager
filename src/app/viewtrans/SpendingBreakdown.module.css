@@ -15,6 +15,7 @@
 
 DIV:last-child.Remaining {
   background-color: #ecffdc;
+  border: 0px;
 }
 
 DIV.Over {
@@ -28,6 +29,7 @@ DIV.NotOver {
 DIV.OverSpent {
   background-color: #f00;
   color: #fff;
+  border: 0px;
 }
 
 .categoryBar h3 {

@@ -39,17 +39,21 @@ export default function SpendingBreakdown(props: SpendingBreakdownProps) {
         setBreakdown([]);
         return;
       }
-      const total = items.reduce((p, c) => (p += c.allowance), 0);
+      let total = items.reduce((p, c) => (p += c.allowance), 0);
       const totalSpend = items.reduce((p, c) => (p += c.amount), 0);
+      const remaining = total - totalSpend;
+      if (remaining <= 0) {
+        total = totalSpend;
+      }
       items.forEach((i) => (i.percent = i.amount / total));
       items.push({
         category: "Remaining",
-        amount: total - totalSpend,
-        allowance: total - totalSpend,
+        amount: remaining,
+        allowance: remaining,
         rate: 0,
-        percent: Math.abs(total - totalSpend) / total,
+        percent: Math.abs(remaining) / total,
       });
-      console.debug(items);
+      console.debug(items, total, totalSpend, remaining);
       setBreakdown(items);
     });
   }, [month, updateKey]);
