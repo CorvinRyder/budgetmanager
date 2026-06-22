@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     );
 
     const ai = new GoogleGenAI({
-      apiKey: "AIzaSyC2PQxaJhJ8a0UsT6ImS5RUV9eYtv4l4Bg",
+      apiKey: process.env.GEMINI_KEY,
     });
 
     let arrayBuff = undefined;
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
       contents: [
         {
           inlineData: {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 					from this receipt in JSON format.
           If the transaction includes tips and / or sale tax, please add them as items in the item list.
           Please try to calculate the % of the tip and put it in the remark of "tip" item
-          If the year part has only 2 digits, please try to extract the date as YY-MM-DD.
+            When parsing the date of the recipt, please try to get the most recent date base on the components of the date
 					Please use ISO format for the date time.
           Can you try to guess what the items actually are, and put your guess to a key called "remark" of each item?
           Please categorize the item, and put it in the "category" field of each item:

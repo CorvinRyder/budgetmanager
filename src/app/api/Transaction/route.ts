@@ -38,7 +38,7 @@ async function updateCashflow(
   if (deleteFirst) {
     sqlReq.input("trans_id", transId);
     await sqlReq.query(
-      "DELETE FROM foodmgmt.dbo.bm_cashflow WHERE trans_id = @trans_id"
+      "DELETE FROM dbo.bm_cashflow WHERE trans_id = @trans_id"
     );
   }
 
@@ -65,7 +65,7 @@ async function saveReceiptFile(
   if (deleteOld) {
     sqlReq.input("trans_id", transId);
     await sqlReq.query(
-      "UPDATE foodmgmt.dbo.bm_receipts SET deleted = 'T' WHERE trans_id = @trans_id;"
+      "UPDATE dbo.bm_receipts SET deleted = 'T' WHERE trans_id = @trans_id;"
     );
   }
 
@@ -83,7 +83,7 @@ async function saveReceiptFile(
   if (!deleteOld) sqlReq.input("trans_id", transId);
   sqlReq.input("filename", fileName);
   return sqlReq.query(
-    "INSERT INTO foodmgmt.dbo.bm_receipts(trans_id, modified_date, filename) VALUES (@trans_id, getDate(), @filename);"
+    "INSERT INTO dbo.bm_receipts(trans_id, modified_date, filename) VALUES (@trans_id, getDate(), @filename);"
   );
 }
 
@@ -109,7 +109,7 @@ export async function PUT(req: NextRequest) {
     sqlReq.input("sale_tax", transData.sale_tax);
     const transId: number = (
       await sqlReq.query(
-        "INSERT INTO foodmgmt.dbo.bm_transaction(transdate, store, location, sale_tax) output inserted.trans_id VALUES(@trandate, @store, @location, @sale_tax);"
+        "INSERT INTO dbo.bm_transaction(transdate, store, location, sale_tax) output inserted.trans_id VALUES(@trandate, @store, @location, @sale_tax);"
       )
     ).recordset[0]["trans_id"];
     console.debug(transId);
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
     sqlReq.input("location", transData.location);
     sqlReq.input("sale_tax", transData.sale_tax);
     const updateResult = await sqlReq.query(`
-    UPDATE foodmgmt.dbo.bm_transaction
+    UPDATE dbo.bm_transaction
     SET transdate=@transdate, store=@store, location=@location, sale_tax=@sale_tax
     WHERE trans_id=@trans_id;`);
     if (updateResult.rowsAffected[0] === 0) {

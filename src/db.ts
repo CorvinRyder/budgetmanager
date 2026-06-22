@@ -1,7 +1,7 @@
 import sql from "mssql";
+import { env } from "process";
 
-const conStr =
-  "workstation id=foodmgmt.mssql.somee.com;packet size=4096;user id=corvinto_SQLLogin_1;pwd=wp1v32e881;data source=foodmgmt.mssql.somee.com;persist security info=False;initial catalog=foodmgmt;TrustServerCertificate=True";
+const conStr: string = env.CONNSTR || "";
 
 export async function connectToDatabase() {
   try {

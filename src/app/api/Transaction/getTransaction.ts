@@ -14,18 +14,18 @@ export default function getTransactions(
     select t1.trans_id, transdate, store, location, sale_tax,
     (select 
     cashflow_id, t2.trans_id, amount, item, category, remark 
-    from foodmgmt.dbo.bm_cashflow t2 
+    from dbo.bm_cashflow t2 
     where t1.trans_id = t2.trans_id FOR JSON PATH
     ) items, 
     (select 
     receipt_id, trans_id, modified_date, filename
-    from foodmgmt.dbo.bm_receipts t3
+    from dbo.bm_receipts t3
     where t1.trans_id = t3.trans_id FOR JSON PATH
     ) receipt,
     (select cast(sum(amount) as numeric(5,2))
-    from foodmgmt.dbo.bm_cashflow where 
-    foodmgmt.dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
-    from foodmgmt.dbo.bm_transaction t1`;
+    from dbo.bm_cashflow where 
+    dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
+    from dbo.bm_transaction t1`;
     if (transId !== undefined) {
       sqlStatement += " where t1.trans_id = @transid and deleted is null";
       sqlReq.input("transid", transId);
