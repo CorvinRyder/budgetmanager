@@ -29,7 +29,6 @@ export default function ViewTrans() {
   return (
     <div className={styles.dashboard}>
       <AlertDialog params={dialogParams} />
-      <SpendingBreakdown updateKey={updateKey} month={month} />
       {/* Month navigation */}
       <div className={styles.monthNav}>
         <button
@@ -54,6 +53,7 @@ export default function ViewTrans() {
           <span className="material-symbols-outlined">arrow_forward</span>
         </button>
       </div>
+      <SpendingBreakdown updateKey={updateKey} month={month} />
       {loading ? (
         <div style={{ textAlign: "center" }}>
           <span className="Loading material-symbols-outlined">sync</span>

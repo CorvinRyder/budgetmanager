@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -18,23 +20,16 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+.material-symbols-outlined.lg-icon {
+  font-size: calc(var(--spacing) * 9);
 }
 
-a {
-  cursor: pointer;
-  color: #91c0fd;
-  text-decoration: none;
+.material-symbols-outlined.xl-icon {
+  font-size: calc(var(--spacing) * 12);
 }
 
 @media (prefers-color-scheme: dark) {

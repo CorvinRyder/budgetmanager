@@ -17,22 +17,34 @@ export default function Home() {
 
   return (
     <div
-      className={styles.LoginScreenContainer}
+      className="absolute inset-0 flex"
       style={{ backgroundImage: "url(" + bgInfo?.image + ")" }}
     >
-      <div className={styles.LoginBox}>
-        <div className={styles.AppTitle}>Budget Buddy</div>
-        <div className={styles.TitleButtons}>
-          <div>
+      <div className="xl:m-auto mx-5 w-full my-auto p-4 xl:w-1/3  bg-white/50 rounded-2xl flex items-center xl:justify-center flex-col">
+        <div className="text-3xl text-gray-600">Budget Buddy</div>
+        <div className="xl:flex-col xl:w-full flex-row space-x-3 space-y-4 p-4">
+          <div className="w-full p-4 rounded-2xl text-xl border border-gray-600 text-gray-600">
             <Link href="/viewtrans">
-              <span className="material-symbols-outlined">data_table</span>
+              <span className="material-symbols-outlined align-middle">
+                data_table
+              </span>
               Dashboard
             </Link>
           </div>
-          <div>
+          <div className="w-full p-4 rounded-2xl text-xl border border-gray-600 text-gray-600">
             <Link href="/addtrans">
-              <span className="material-symbols-outlined">playlist_add</span>
+              <span className="material-symbols-outlined align-middle">
+                playlist_add
+              </span>
               New Transaction
+            </Link>
+          </div>
+          <div className="w-full p-4 rounded-2xl text-xl border border-gray-600 text-gray-600">
+            <Link href="/shoppinglist">
+              <span className="material-symbols-outlined align-middle">
+                playlist_add
+              </span>
+              Shopping List
             </Link>
           </div>
         </div>
