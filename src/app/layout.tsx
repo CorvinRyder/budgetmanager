@@ -21,13 +21,13 @@ export default function RootLayout({
       </head>
       <body>
         <div className="size-full flex overflow-hidden md:flex-row flex-col">
-          <div className="w-full flex md:w-30 bg-sky-200 flex-row md:flex-col">
+          <div className="w-full flex md:w-30 bg-blue-950 flex-row md:flex-col">
             <div className="p-5 flex items-center justify-center space-x-3">
-              <span className="material-symbols-outlined text-yellow-700 xl-icon">
+              <span className="material-symbols-outlined text-cyan-400 xl-icon">
                 currency_exchange
               </span>
             </div>
-            <div className="text-sky-700 space-x-4 md:space-x-0 md:space-y-2 flex md:flex-col items-center justify-end w-full md:items-start md:p-5 mx-5 md:mx-0">
+            <div className="text-cyan-400 space-x-4 md:space-x-0 md:space-y-2 flex md:flex-col items-center justify-end w-full md:items-start md:p-5 mx-5 md:mx-0">
               <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link href="/viewtrans" className="flex flex-col items-center">
                   <span
@@ -66,7 +66,9 @@ export default function RootLayout({
               </div>
             </div>
           </div>
-          <div className="h-full w-full p-4 overflow-auto">{children}</div>
+          <div className="h-full w-full overflow-auto bg-slate-100">
+            {children}
+          </div>
         </div>
       </body>
     </html>
