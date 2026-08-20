@@ -1,13 +1,7 @@
 "use client";
 
 import moment from "moment";
-import {
-  TextField,
-  Button,
-  Switch,
-  FormControlLabel,
-  IconButton,
-} from "@mui/material";
+import { TextField, Button, Switch, FormControlLabel } from "@mui/material";
 import {
   Dispatch,
   SetStateAction,
@@ -16,85 +10,12 @@ import {
   useRef,
   useState,
 } from "react";
-import styles from "./pages.module.css";
-import Classes from "./pages.module.css";
-import AlertDialog from "@/components/AlertDialog";
-import NumberField from "@/components/NumberField";
+
+import TransactionInput from "./TransactionInput";
+
 import { useRouter } from "next/navigation";
-import ComboBox from "@/components/ComboBox";
-import CachedLut from "@/utils/CategoriesLut";
 
-type ItemInputProps = {
-  item: TransItem;
-  onChange?: (newV: TransItem) => void;
-  onDelete?: () => void;
-};
-
-const ItemInput = function (props: ItemInputProps) {
-  const onChangeHandler = function (newVal: string, key: keyof TransItem) {
-    const newItem = { ...props.item };
-    switch (key) {
-      case "amount":
-      case "cashflow_id":
-      case "trans_id":
-        return;
-      default:
-        newItem[key] = newVal;
-    }
-    if (props.onChange !== undefined) props.onChange(newItem);
-  };
-  return (
-    <div className={styles.itemRow}>
-      <TextField
-        label="Item"
-        value={props.item.item}
-        onChange={(evt) => {
-          onChangeHandler(evt.target.value, "item");
-        }}
-      />
-      <NumberField
-        textFieldProps={{
-          label: "Amount",
-        }}
-        value={props.item.amount}
-        onChange={(newValue) => {
-          const newItem = { ...props.item };
-          newItem.amount = newValue;
-          if (props.onChange !== undefined) props.onChange(newItem);
-        }}
-      />
-      <div style={{ display: "inline-flex", verticalAlign: "middle" }}>
-        <ComboBox<BudgetCategory>
-          label="Category"
-          options={CachedLut.categories || []}
-          value={CachedLut.categoriesLut?.[props.item.category] || undefined}
-          displayValue="category"
-          onChange={(newValue) => {
-            onChangeHandler(newValue.cat_code, "category");
-          }}
-        />
-      </div>
-      <TextField
-        label="Remark"
-        value={props.item.remark}
-        onChange={(evt) => {
-          onChangeHandler(evt.target.value, "remark");
-        }}
-      />
-      <IconButton
-        color="error"
-        onClick={() => props.onDelete && props.onDelete()}
-      >
-        <span
-          className="material-symbols-outlined ActionBtn"
-          style={{ flex: 0.1, textAlign: "right" }}
-        >
-          delete
-        </span>
-      </IconButton>
-    </div>
-  );
-};
+import AlertDialog from "@/components/AlertDialog";
 
 type EditTransProps = {
   trans?: Transaction;
@@ -240,235 +161,293 @@ export default function EditTransPage(props: EditTransProps) {
           cancel={cancel}
         />
       ),
-      // OnDialogCancel() {
-      //   uploadReceiptDialog(onReceiptSelected, true);
-      // },
     });
   }
 
+  const openUploadDialog = () =>
+    uploadReceiptDialog(async (file, useAI) => {
+      if (file !== undefined && useAI) {
+        const newTrans = await extractReceiptContent(setDialogParams, file);
+        if (newTrans !== undefined) {
+          newTrans.trans_id = curTrans.trans_id;
+          setCurTrans(newTrans);
+          setDateUpdateKey(Date.now());
+
+          setReceiptFile(file);
+        }
+      } else setReceiptFile(file);
+    });
+
   return (
-    <div className={styles.newTransaction}>
+    <div className="flex flex-col p-4 size-full gap-2">
       <AlertDialog params={dialogParams} />
-      <div className={styles.receiptContainer}>
-        <div className={Classes.receiptPreview}>
-          <div className={Classes.cover}></div>
-          {!receiptUrl && "No receipt selected or uploaded"}
-          <>
-            {receiptUrl && (
-              <img
-                src={receiptUrl}
-                alt="Receipt Preview"
-                className={styles.receiptImage}
-              />
-            )}
-            <div className={styles.hoverActions}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() =>
-                  uploadReceiptDialog(async (file, useAI) => {
-                    if (file !== undefined && useAI) {
+      <div className="grow-0 md:text-left text-center text-2xl font-bold">
+        Add/Edit Transaction
+      </div>
+      <div className="h-full flex gap-4 flex-col md:flex-row flex-1 min-h-0">
+        <div className="gap-4 md:w-4/12 w-full md:h-full flex md:flex-col flex-row h-2/12">
+          <div className="md:w-full w-1/3 flex min-h-0 md:h-4/6 md:flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl md:p-4 p-2 flex-col relative overflow-hidden">
+            <div className="text-lg grow-0 ">Receipt</div>
+            <div className="group flex flex-1 min-h-0">
+              <div className="flex-1 object-contain h-full md:flex items-center justify-center">
+                {!receiptUrl ? (
+                  <div onClick={() => openUploadDialog()}>
+                    <span className="material-symbols-outlined align-middle">
+                      Upload
+                    </span>{" "}
+                    Upload
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={receiptUrl}
+                      alt="Receipt Preview"
+                      className="h-full object-contain md:block hidden"
+                    />
+                    <a href={receiptUrl} target="_blank" className="md:hidden">
+                      <span className="material-symbols-outlined align-middle">
+                        open_in_new
+                      </span>{" "}
+                      View
+                    </a>
+                    <br />
+                    <a
+                      href="#"
+                      className="md:hidden"
+                      onClick={() => (openUploadDialog(), false)}
+                    >
+                      <span className="material-symbols-outlined align-middle">
+                        Upload
+                      </span>{" "}
+                      Upload
+                    </a>
+                  </>
+                )}
+              </div>
+              <div className="gap-4 group-hover:flex flex-col justify-center items-center hidden absolute size-full bg-blue-300/50 top-0 left-0 rounded-xl">
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => openUploadDialog()}
+                >
+                  Upload New Receipt
+                </Button>
+                {receiptUrl && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => {
+                      window.open(receiptUrl);
+                    }}
+                  >
+                    View Full Size
+                  </Button>
+                )}
+                {receiptUrl && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="secondary"
+                    onClick={async () => {
                       const newTrans = await extractReceiptContent(
                         setDialogParams,
-                        file
+                        undefined,
+                        receiptUrl
                       );
                       if (newTrans !== undefined) {
                         newTrans.trans_id = curTrans.trans_id;
                         setCurTrans(newTrans);
                         setDateUpdateKey(Date.now());
-
-                        setReceiptFile(file);
                       }
-                    } else setReceiptFile(file);
-                  })
-                }
-              >
-                Upload New Receipt
-              </Button>
-              {receiptUrl && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => {
-                    window.open(receiptUrl);
-                  }}
-                >
-                  View Full Size
-                </Button>
-              )}
-              {receiptUrl && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="secondary"
-                  onClick={async () => {
-                    const newTrans = await extractReceiptContent(
-                      setDialogParams,
-                      undefined,
-                      receiptUrl
-                    );
-                    if (newTrans !== undefined) {
-                      newTrans.trans_id = curTrans.trans_id;
-                      setCurTrans(newTrans);
-                      setDateUpdateKey(Date.now());
-                    }
-                  }}
-                >
-                  Re-analyze with AI
-                </Button>
-              )}
+                    }}
+                  >
+                    Re-analyze with AI
+                  </Button>
+                )}
+              </div>
             </div>
-          </>
+          </div>
+          <div className="md:w-full w-2/3 md:h-2/6 md:flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl md:p-4 p-2">
+            <div className="text-lg md:block hidden">Transaction Summary</div>
+            <div className="flex">
+              <div className="flex-1">Store</div>
+              <div className="flex-1 text-right">
+                {curTrans?.store || "N/A"}
+              </div>
+            </div>
+            <div className="flex">
+              <div className="flex-1">Date</div>
+              <div className="flex-2 text-right">
+                {moment(curTrans?.transdate || new Date()).format(
+                  "YYYY-MM-DD HH:mm:ss"
+                )}
+              </div>
+            </div>
+            <div className="flex">
+              <div className="flex-1">Total</div>
+              <div className="flex-1 text-right">
+                $
+                {curTrans.items
+                  ? curTrans.items.reduce((p, c) => p + c.amount, 0)
+                  : 0}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className={styles.basicInfoRow}>
-        <TextField
-          key={dateUpdateKey}
-          label="Date Time"
-          defaultValue={moment(curTrans.transdate).format(
-            "YYYY-MM-DD HH:mm:ss"
-          )}
-          onBlur={(evt) => {
-            let dateCheck = moment(evt.target.value);
-            if (!dateCheck.isValid) dateCheck = moment();
-            const newTrans = { ...curTrans };
-            newTrans.transdate = dateCheck.toDate();
-            setCurTrans(newTrans);
-          }}
-        />
-        <TextField
-          label="Store"
-          value={curTrans.store}
-          onChange={(evt) => {
-            const newTrans = { ...curTrans };
-            newTrans.store = evt.target.value;
-            setCurTrans(newTrans);
-          }}
-        />
-        <TextField
-          label="Store Address"
-          value={curTrans.location}
-          onChange={(evt) => {
-            const newTrans = { ...curTrans };
-            newTrans.location = evt.target.value;
-            setCurTrans(newTrans);
-          }}
-        />
-      </div>
-      <div className={styles.itemsSection}>
-        <div className={styles.itemsHeader}>
-          <h4>
-            Items{" "}
-            <IconButton
-              onClick={() => {
-                const items = curTrans.items.concat([]);
-                items.push({
-                  amount: 0,
-                  item: "",
-                  category: "",
-                  remark: "",
-                });
-                setCurTrans({
-                  ...curTrans,
-                  items,
-                });
+        <div className="bg-slate-200/60 border-2 border-slate-300 rounded-xl md:w-8/12 flex-1 min-h-0 p-4 flex flex-col gap-4 w-full">
+          <div className="text-lg">Transaction Data</div>
+          <div className="flex gap-4">
+            <TextField
+              key={dateUpdateKey}
+              label="Date Time"
+              defaultValue={moment(curTrans.transdate).format(
+                "YYYY-MM-DD HH:mm:ss"
+              )}
+              onBlur={(evt) => {
+                let dateCheck = moment(evt.target.value);
+                if (!dateCheck.isValid()) dateCheck = moment();
+                const newTrans = { ...curTrans };
+                newTrans.transdate = dateCheck.toDate();
+                setCurTrans(newTrans);
+                setDateUpdateKey(Date.now());
               }}
-            >
-              <span className="material-symbols-outlined ActionBtn">add</span>
-            </IconButton>
-          </h4>
-        </div>
-        {curTrans.items?.map((i, j) => (
-          <ItemInput
-            key={j}
-            item={i}
-            onChange={(newV) => {
-              const items = curTrans.items.concat([]);
-              items.splice(j, 1, newV);
-              setCurTrans({
-                ...curTrans,
-                items,
-              });
-            }}
-            onDelete={() => {
-              const items = curTrans.items.concat([]);
-              items.splice(j, 1);
-              setCurTrans({
-                ...curTrans,
-                items,
-              });
-            }}
-          />
-        ))}
-      </div>
-      <div className={styles.submitContainer}>
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          onClick={async () => {
-            setDialogParams({
-              open: true,
-              title: "Confirm to Save the Transaction",
-              jsx: (
-                <div>
-                  <p>
-                    Are you sure to save this transaction? Please make sure the
-                    information is correct, especially if it is the result of AI
-                    analysis.
-                  </p>
-                  <br />
-                  <p>
-                    Date of transaction:{" "}
-                    <b>
-                      {moment(curTrans.transdate).format("YYYY-MM-DD HH:mm:ss")}
-                    </b>
-                  </p>
-                </div>
-              ),
-              async OnDialogOk() {
-                const formData = new FormData();
-                formData.append("transdata", JSON.stringify(curTrans));
-                if (receiptFile !== undefined)
-                  formData.append("file", receiptFile);
-                setDialogParams({
-                  open: true,
-                  title: "Saving the Transaction Record",
-                  jsx: (
-                    <div>
-                      <span className="Loading material-symbols-outlined">
-                        sync
-                      </span>
-                      Saving the transaction record to the database...
-                    </div>
-                  ),
-                  noOkButton: true,
-                });
-                const result = await fetch("/api/Transaction", {
-                  method: curTrans.trans_id ? "POST" : "PUT",
-                  body: formData,
-                });
-                if (result.status === 200) router.push("/viewtrans");
-                else {
+            />
+            <TextField
+              label="Store"
+              value={curTrans.store}
+              onChange={(evt) => {
+                const newTrans = { ...curTrans };
+                newTrans.store = evt.target.value;
+                setCurTrans(newTrans);
+              }}
+            />
+            <TextField
+              label="Store Address"
+              value={curTrans.location}
+              onChange={(evt) => {
+                const newTrans = { ...curTrans };
+                newTrans.location = evt.target.value;
+                setCurTrans(newTrans);
+              }}
+            />
+          </div>
+          <div className="flex ">
+            <div className="text-lg flex-1">Items</div>
+            <div className="flex-1 text-right ">
+              <Button
+                variant="contained"
+                onClick={() => {
+                  const items = curTrans.items.concat([]);
+                  items.push({
+                    amount: 0,
+                    item: "",
+                    category: "",
+                    remark: "",
+                  });
+                  setCurTrans({
+                    ...curTrans,
+                    items,
+                  });
+                }}
+              >
+                <span className="material-symbols-outlined ActionBtn">add</span>
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col overflow-auto gap-4 py-2">
+            {curTrans.items?.map((i, j) => (
+              <TransactionInput
+                key={j}
+                item={i}
+                onChange={(newV) => {
+                  const items = curTrans.items.concat([]);
+                  items.splice(j, 1, newV);
+                  setCurTrans({
+                    ...curTrans,
+                    items,
+                  });
+                }}
+                onDelete={() => {
+                  const items = curTrans.items.concat([]);
+                  items.splice(j, 1);
+                  setCurTrans({
+                    ...curTrans,
+                    items,
+                  });
+                }}
+              />
+            ))}
+          </div>
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            onClick={async () => {
+              setDialogParams({
+                open: true,
+                title: "Confirm to Save the Transaction",
+                jsx: (
+                  <div>
+                    <p>
+                      Are you sure to save this transaction? Please make sure
+                      the information is correct, especially if it is the result
+                      of AI analysis.
+                    </p>
+                    <br />
+                    <p>
+                      Date of transaction:{" "}
+                      <b>
+                        {moment(curTrans.transdate).format(
+                          "YYYY-MM-DD HH:mm:ss"
+                        )}
+                      </b>
+                    </p>
+                  </div>
+                ),
+                async OnDialogOk() {
+                  const formData = new FormData();
+                  formData.append("transdata", JSON.stringify(curTrans));
+                  if (receiptFile !== undefined)
+                    formData.append("file", receiptFile);
                   setDialogParams({
                     open: true,
-                    title: "Unable to save this transaction",
+                    title: "Saving the Transaction Record",
                     jsx: (
                       <div>
-                        Please check the input and try again!
-                        <br />
-                        <div>{JSON.stringify(await result.json())}</div>
+                        <span className="Loading material-symbols-outlined">
+                          sync
+                        </span>
+                        Saving the transaction record to the database...
                       </div>
                     ),
+                    noOkButton: true,
                   });
-                }
-              },
-              OnDialogCancel() {},
-            });
-          }}
-        >
-          <span className="material-symbols-outlined">send</span>
-        </Button>
+                  const result = await fetch("/api/Transaction", {
+                    method: curTrans.trans_id ? "POST" : "PUT",
+                    body: formData,
+                  });
+                  if (result.status === 200) router.push("/viewtrans");
+                  else {
+                    setDialogParams({
+                      open: true,
+                      title: "Unable to save this transaction",
+                      jsx: (
+                        <div>
+                          Please check the input and try again!
+                          <br />
+                          <div>{JSON.stringify(await result.json())}</div>
+                        </div>
+                      ),
+                    });
+                  }
+                },
+                OnDialogCancel() {},
+              });
+            }}
+          >
+            <span className="material-symbols-outlined">send</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

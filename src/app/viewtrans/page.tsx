@@ -33,54 +33,55 @@ export default function ViewTrans() {
   return (
     <div className="gap-4 p-4 flex flex-col h-full ">
       <AlertDialog params={dialogParams} />
-      <div className="flex w-full h-3/12 gap-4 ">
-        <div className="flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+      <div className="flex w-full md:h-3/12 gap-4 ">
+        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
           <SpendingByCategory updateKey={updateKey} month={month} />
         </div>
-        <div className="flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
           <DailySpendingTrend
             data={trans}
             updateKey={updateKey}
             month={month}
           />
         </div>
-        <div className="flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
           <TopFiveSpending data={trans} />
         </div>
         <div className="flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl text-center flex flex-col size-full py-2 px-4 gap-4">
-          <div className="text-center text-xl font-bold">Quick Action</div>
-          <div className="flex items-center justify-center">
-            <button
-              className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-              onClick={() => {
-                setMonth(moment(month).add(-1, "months").toDate());
-              }}
-              disabled={loading}
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-            </button>
-            <div className="text-xl font-bold mx-3">
-              {moment(month).format("YYYY-MM")}
+          <div className="flex md:flex-col flex-row gap-4">
+            <div className="flex-1 flex items-center justify-center">
+              <button
+                className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
+                onClick={() => {
+                  setMonth(moment(month).add(-1, "months").toDate());
+                }}
+                disabled={loading}
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </button>
+              <div className="text-xl font-bold mx-3">
+                {moment(month).format("YYYY-MM")}
+              </div>
+              <button
+                className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
+                onClick={() => {
+                  setMonth(moment(month).add(1, "months").toDate());
+                }}
+                disabled={loading}
+              >
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
             </div>
             <button
-              className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-              onClick={() => {
-                setMonth(moment(month).add(1, "months").toDate());
-              }}
-              disabled={loading}
+              className="flex-1 bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
+              onClick={() => router.push("/addtrans")}
             >
-              <span className="material-symbols-outlined">arrow_forward</span>
+              New Receipt
             </button>
           </div>
-          <button
-            className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-            onClick={() => router.push("/addtrans")}
-          >
-            New Receipt
-          </button>
         </div>
       </div>
-      <div className="p-2 h-9/12 bg-white rounded-2xl shadow-md border border-slate-200 overflow-auto">
+      <div className="p-2 h-full md:h-9/12 bg-white rounded-2xl shadow-md border border-slate-200 overflow-auto">
         {loading ? (
           <div style={{ textAlign: "center" }}>
             <span className="Loading material-symbols-outlined">sync</span>
@@ -104,7 +105,7 @@ export default function ViewTrans() {
                   key={j}
                   className="border-b border-slate-200 hover:bg-slate-50 p-4 text-sm text-slate-700"
                 >
-                  <td>{moment(i.transdate).format("YYYY-MM-DD HH:mm:ss")}</td>
+                  <td>{moment(i.transdate).format("MM-DD HH:mm")}</td>
                   <td>
                     {i.location ? (
                       <a
@@ -115,6 +116,9 @@ export default function ViewTrans() {
                         }
                         target="_blank"
                       >
+                        <span className="material-symbols-outlined align-middle">
+                          map
+                        </span>
                         {i.store}
                       </a>
                     ) : (
