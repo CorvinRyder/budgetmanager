@@ -26,6 +26,7 @@ export default function NumberField(props: NumberFieldProps) {
         else numValue = parseFloat(newValue);
         if (isNaN(numValue)) numValue = 0;
         onChange(numValue);
+        setUpdateKey(Date.now());
       }}
       {...textFieldProps}
     />

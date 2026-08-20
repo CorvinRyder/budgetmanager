@@ -109,7 +109,7 @@ export default function ComboBox<T>(props: ComboBoxProps<T>) {
           </li>
         );
       }}
-      sx={{ width: 300 }}
+      // sx={{ width: 300 }}
       freeSolo
       renderInput={(params) => <TextField {...params} label={props.label} />}
       {...props.muiProps}

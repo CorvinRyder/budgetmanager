@@ -133,8 +133,10 @@ async function extractReceiptContent(
     return;
   }
   const receiptList: ReceiptContent = await readReceiptResult.json();
+  let dateTime = moment(receiptList.date_time);
+  if (!dateTime.isValid()) dateTime = moment();
   const newTrans: Transaction = {
-    transdate: moment(receiptList.date_time).toDate(),
+    transdate: dateTime.toDate(),
     store: receiptList.store_name,
     location: receiptList.store_addr,
     sale_tax: receiptList.sale_tax,
