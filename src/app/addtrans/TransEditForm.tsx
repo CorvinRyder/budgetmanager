@@ -77,7 +77,10 @@ async function extractReceiptContent(
   return newTrans;
 }
 
-function UploadReceiptDialog(props: {
+function UploadReceiptDialog({
+  OnDialogClosed,
+  cancel,
+}: {
   OnDialogClosed: (file: File | undefined, useAI: boolean) => void;
   cancel?: boolean;
 }) {
@@ -93,13 +96,12 @@ function UploadReceiptDialog(props: {
   useEffect(() => {
     return () => {
       console.debug("On destroy");
-      console.debug(props.cancel);
-      if (props.cancel) return;
+      console.debug(cancel);
+      if (cancel) return;
       const { selectedFile, isUseAi } = latestStateRef.current;
-      if (selectedFile !== undefined)
-        props.OnDialogClosed(selectedFile, isUseAi);
+      if (selectedFile !== undefined) OnDialogClosed(selectedFile, isUseAi);
     };
-  }, [props.cancel]);
+  }, [cancel]);
 
   return (
     <div>
@@ -142,7 +144,7 @@ export default function EditTransPage(props: EditTransProps) {
     else if (curTrans.receipt?.filename)
       return "/receipts/" + curTrans.receipt.filename;
     else return "";
-  }, [receiptFile]);
+  }, [receiptFile, curTrans.receipt?.filename]);
   const [dateUpdateKey, setDateUpdateKey] = useState<number>(Date.now());
   const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
     {} as AlertDialogParams
@@ -270,21 +272,21 @@ export default function EditTransPage(props: EditTransProps) {
           <div className="md:w-full w-2/3 md:h-2/6 md:flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl md:p-4 p-2">
             <div className="text-lg md:block hidden">Transaction Summary</div>
             <div className="flex">
-              <div className="flex-1">Store</div>
+              <div>Store</div>
               <div className="flex-1 text-right">
                 {curTrans?.store || "N/A"}
               </div>
             </div>
             <div className="flex">
-              <div className="flex-1">Date</div>
-              <div className="flex-2 text-right">
+              <div>Date</div>
+              <div className="flex-1 text-right">
                 {moment(curTrans?.transdate || new Date()).format(
                   "YYYY-MM-DD HH:mm:ss"
                 )}
               </div>
             </div>
             <div className="flex">
-              <div className="flex-1">Total</div>
+              <div>Total</div>
               <div className="flex-1 text-right">
                 $
                 {curTrans.items

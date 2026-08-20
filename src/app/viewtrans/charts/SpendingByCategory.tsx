@@ -30,7 +30,7 @@ const pieColors = [
 const overSpentColor = "rgba(255, 99, 132, 0.7)";
 const remaningColor = "rgba(99, 255, 132, 0.7)";
 
-export default function ({
+export default function SpendingByCategory({
   month,
   updateKey,
 }: {
@@ -61,7 +61,7 @@ export default function ({
         values.push(i.amount);
       });
 
-      let remaining = allowance - totalSpend;
+      const remaining = allowance - totalSpend;
       values.push(Math.abs(remaining));
       labels.push(remaining > 0 ? "Remaining" : "Overspent");
       borderColor[values.length - 1] =

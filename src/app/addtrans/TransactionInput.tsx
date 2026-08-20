@@ -19,13 +19,14 @@ const InputFields = function ({
   isAlertDialog,
 }: {
   item: TransItem;
-  onChangeHandler: Function;
-  onDelete?: Function;
-  isAlertDialog?: Boolean;
+  onChangeHandler: (value: string, key: keyof TransItem) => void;
+  onDelete?: () => void;
+  isAlertDialog?: boolean;
 }) {
   return (
     <div className="flex basis-1/2 md:flex-nowrap flex-wrap gap-4">
       <TextField
+        className="md:flex-2 w-full"
         label="Item"
         value={item.item || ""}
         onChange={(evt) => {
@@ -35,13 +36,14 @@ const InputFields = function ({
       <NumberField
         textFieldProps={{
           label: "Amount",
+          className: "md:w-auto flex-1",
         }}
         value={item.amount}
         onChange={(newValue) => {
-          onChangeHandler(newValue, "amount");
+          onChangeHandler(newValue.toString(), "amount");
         }}
       />
-      <div className="w-3/12">
+      <div className="md:w-auto flex-1">
         <ComboBox<BudgetCategory>
           label="Category"
           options={CachedLut.categories || []}
@@ -53,7 +55,7 @@ const InputFields = function ({
         />
       </div>
       <TextField
-        className="w-6/12"
+        className="md:flex-2 w-full"
         label="Remark"
         value={item.remark || ""}
         onChange={(evt) => {
@@ -74,7 +76,7 @@ const InputFields = function ({
   );
 };
 
-export default function (props: ItemInputProps) {
+export default function TransItemInput(props: ItemInputProps) {
   const [dialogParams, setDialogParams] = useState<AlertDialogParams>();
 
   const onChangeHandler = function (
@@ -114,7 +116,7 @@ export default function (props: ItemInputProps) {
         />
       ),
       OnDialogOk: () => {
-        props.onChange && props.onChange(cachedTransItem);
+        if (props.onChange) props.onChange(cachedTransItem);
       },
       OnDialogCancel() {},
     });

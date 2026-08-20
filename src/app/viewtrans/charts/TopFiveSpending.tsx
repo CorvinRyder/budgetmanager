@@ -1,7 +1,7 @@
 import TooltipSpan from "@/components/TooltipSpan";
 import moment from "moment";
 
-export default function ({ data }: { data: Transaction[] }) {
+export default function TopFiveSpending({ data }: { data: Transaction[] }) {
   const copyData: Transaction[] = ([] as Transaction[]).concat(data);
   copyData.sort((a, b) => (b.total || 0) - (a.total || 0));
   if (copyData.length > 5) copyData.splice(5);

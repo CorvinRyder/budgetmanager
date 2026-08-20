@@ -8,9 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import moment from "moment";
-import { useEffect, useState } from "react";
-import { Line, Pie } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -21,10 +19,8 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-export default function ({
+export default function DailySpendingTrend({
   data,
-  updateKey,
-  month,
 }: {
   data: Transaction[];
   updateKey: number;
@@ -32,7 +28,7 @@ export default function ({
 }) {
   if (data.length === 0) return <div />;
 
-  let dataPoint: number[] = Array.apply([], Array(31)) as number[];
+  const dataPoint: number[] = Array.apply([], Array(31)) as number[];
   dataPoint.fill(0);
 
   data.forEach((i) => {
