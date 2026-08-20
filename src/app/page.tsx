@@ -17,7 +17,7 @@ export default function Home() {
 
   return (
     <div
-      className="absolute inset-0 flex"
+      className="absolute inset-0 flex bg-cyan-800"
       style={{ backgroundImage: "url(" + bgInfo?.image + ")" }}
     >
       <div className="xl:m-auto mx-5 w-full my-auto p-4 xl:w-1/3  bg-white/50 rounded-2xl flex items-center xl:justify-center flex-col">
