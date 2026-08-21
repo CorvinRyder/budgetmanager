@@ -138,7 +138,7 @@ export default function TransItemInput(props: ItemInputProps) {
       <div className="flex md:hidden border-2 rounded-xl border-gray-300 bg-white px-4 py-2">
         <div className="flex-4">
           {props.item.item || "N/A"} (${props.item.amount || "0"}) <br />
-          {CachedLut?.categoriesLut?.[props.item.category].category ||
+          {CachedLut?.categoriesLut?.[props.item.category]?.category ||
             "Uncategorized"}{" "}
           - {props.item.remark || "N/A"}
         </div>
@@ -149,7 +149,10 @@ export default function TransItemInput(props: ItemInputProps) {
           >
             edit
           </span>{" "}
-          <span className="material-symbols-outlined text-4xl! text-red-400">
+          <span
+            className="material-symbols-outlined text-4xl! text-red-400"
+            onClick={() => props.onDelete && props.onDelete()}
+          >
             delete
           </span>
         </div>
