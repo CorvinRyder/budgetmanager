@@ -8,6 +8,7 @@ declare global {
     receipt?: Receipt;
     total?: number;
     sale_tax?: number;
+    isdraft?: Boolean;
   };
 
   type TransItem = {

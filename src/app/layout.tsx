@@ -53,6 +53,19 @@ export default function RootLayout({
               </div>
               <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link
+                  href="/batchupload"
+                  className="flex flex-col items-center"
+                >
+                  <span className="material-symbols-outlined align-middle lg-icon">
+                    stack
+                  </span>
+                  <span className="hidden md:block text-center text-base">
+                    Batch Upload
+                  </span>
+                </Link>
+              </div>
+              <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+                <Link
                   href="/shoppinglist"
                   className="flex flex-col items-center"
                 >
