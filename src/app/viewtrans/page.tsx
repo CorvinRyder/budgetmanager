@@ -105,7 +105,17 @@ export default function ViewTrans() {
                   key={j}
                   className="border-b border-slate-200 hover:bg-slate-50 p-4 text-sm text-slate-700"
                 >
-                  <td>{moment(i.transdate).format("MM-DD HH:mm")}</td>
+                  <td>
+                    {moment(i.transdate).format("MM-DD HH:mm")}
+                    {i.isdraft && (
+                      <div>
+                        <span className="material-symbols-outlined align-middle">
+                          draft
+                        </span>{" "}
+                        Draft
+                      </div>
+                    )}
+                  </td>
                   <td>
                     {i.location ? (
                       <a

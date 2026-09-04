@@ -180,6 +180,8 @@ export default function EditTransPage(props: EditTransProps) {
       } else setReceiptFile(file);
     });
 
+  const [markAsFinal, setMarkAsFinal] = useState(false);
+
   return (
     <div className="flex flex-col p-4 size-full gap-2">
       <AlertDialog params={dialogParams} />
@@ -269,7 +271,7 @@ export default function EditTransPage(props: EditTransProps) {
               </div>
             </div>
           </div>
-          <div className="md:w-full w-2/3 md:h-2/6 md:flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl md:p-4 p-2">
+          <div className="md:w-full w-2/3 md:h-2/6 md:flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl md:p-4 p-2 gap-2 flex flex-col">
             <div className="text-lg md:block hidden">Transaction Summary</div>
             <div className="flex">
               <div>Store</div>
@@ -294,6 +296,27 @@ export default function EditTransPage(props: EditTransProps) {
                   : 0}
               </div>
             </div>
+            {curTrans.isdraft && (
+              <div className="hidden md:block border-2 border-slate-300 rounded-xl md:p-4 p-2">
+                <div className="text-2xl text-center">
+                  {markAsFinal
+                    ? "This transaction is marked as final"
+                    : "This transaction is a draft"}
+                </div>
+                <div className="text-center mt-2">
+                  {!markAsFinal && (
+                    <Button
+                      variant="contained"
+                      onClick={() => {
+                        setMarkAsFinal(true);
+                      }}
+                    >
+                      Mark as final
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="bg-slate-200/60 border-2 border-slate-300 rounded-xl md:w-8/12 flex-1 min-h-0 p-4 flex flex-col gap-4 w-full">
@@ -408,6 +431,8 @@ export default function EditTransPage(props: EditTransProps) {
                 ),
                 async OnDialogOk() {
                   const formData = new FormData();
+                  if (curTrans.isdraft && markAsFinal)
+                    curTrans.isdraft = undefined;
                   formData.append("transdata", JSON.stringify(curTrans));
                   if (receiptFile !== undefined)
                     formData.append("file", receiptFile);

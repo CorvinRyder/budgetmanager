@@ -11,7 +11,7 @@ export default function getTransactions(
     await trans.begin();
     const sqlReq = trans.request();
     let sqlStatement = `
-    select t1.trans_id, transdate, store, location, sale_tax,
+    select t1.trans_id, transdate, store, location, isdraft, sale_tax,
     (select 
     cashflow_id, t2.trans_id, amount, item, category, remark 
     from dbo.bm_cashflow t2 
@@ -35,7 +35,9 @@ export default function getTransactions(
       sqlStatement +=
         " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-0.00001";
     }
-    sqlStatement += "  and deleted is null order by transdate desc";
+    sqlStatement += "  and deleted is null";
+    if (!transId) sqlStatement += " or (isdraft = 'T' and deleted is null)";
+    sqlStatement += " order by isdraft desc, transdate desc";
     const transResult = await sqlReq.query(sqlStatement);
     const transactions: Array<Transaction> = transResult.recordset;
     transactions.forEach((i) => {

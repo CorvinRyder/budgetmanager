@@ -32,7 +32,7 @@ export default function DailySpendingTrend({
   dataPoint.fill(0);
 
   data.forEach((i) => {
-    dataPoint[new Date(i.transdate).getDate()] += i.total || 0;
+    if (!i.isdraft) dataPoint[new Date(i.transdate).getDate()] += i.total || 0;
   });
 
   let total = 0;

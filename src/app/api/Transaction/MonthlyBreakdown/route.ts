@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         where bt.transdate 
         between datetrunc(MONTH, CAST(@yearmonth as datetime)) and 
         dateadd(MONTH, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-0.00001
-        and bt.deleted is null
+        and bt.deleted is null and isdraft is null
         group by category
       ) t2
       group by t2.category

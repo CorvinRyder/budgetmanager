@@ -106,10 +106,10 @@ export async function PUT(req: NextRequest) {
     sqlReq.input("trandate", transData.transdate);
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
-    sqlReq.input("sale_tax", transData.sale_tax);
+    sqlReq.input("isdraft", transData.isdraft && "T");
     const transId: number = (
       await sqlReq.query(
-        "INSERT INTO dbo.bm_transaction(transdate, store, location, sale_tax) output inserted.trans_id VALUES(@trandate, @store, @location, @sale_tax);"
+        "INSERT INTO dbo.bm_transaction(transdate, store, location, isdraft) output inserted.trans_id VALUES(@trandate, @store, @location, @isdraft);"
       )
     ).recordset[0]["trans_id"];
     console.debug(transId);
@@ -169,10 +169,10 @@ export async function POST(req: NextRequest) {
     sqlReq.input("transdate", transData.transdate);
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
-    sqlReq.input("sale_tax", transData.sale_tax);
+    sqlReq.input("isdraft", transData.isdraft ? "T" : null);
     const updateResult = await sqlReq.query(`
     UPDATE dbo.bm_transaction
-    SET transdate=@transdate, store=@store, location=@location, sale_tax=@sale_tax
+    SET transdate=@transdate, store=@store, location=@location, isdraft=@isdraft
     WHERE trans_id=@trans_id;`);
     if (updateResult.rowsAffected[0] === 0) {
       return NextResponse.json(
