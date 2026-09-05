@@ -12,6 +12,7 @@ declare global {
     }>;
     total: number;
     sale_tax: number;
+    receipt: Receipt;
   };
 }
 

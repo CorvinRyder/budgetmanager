@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/db";
 import getTransactions from "./getTransaction";
 import sql from "mssql";
-import fs from "fs/promises";
 import moment from "moment";
 
 export async function GET(req: NextRequest) {
@@ -56,45 +55,10 @@ async function updateCashflow(
   return sqlReq.bulk(table);
 }
 
-async function saveReceiptFile(
-  file: File,
-  transId: number,
-  sqlReq: sql.Request,
-  deleteOld?: boolean
-) {
-  if (deleteOld) {
-    sqlReq.input("trans_id", transId);
-    await sqlReq.query(
-      "UPDATE dbo.bm_receipts SET deleted = 'T' WHERE trans_id = @trans_id;"
-    );
-  }
-
-  let fileName = file.name;
-  const extPos = fileName.lastIndexOf(".");
-  fileName =
-    transId +
-    "_" +
-    fileName.substring(0, extPos - 1).substring(0, 200) +
-    fileName.substring(extPos);
-  const fileBuffer = await file.arrayBuffer();
-  const buffer = new Uint8Array(fileBuffer);
-
-  await fs.writeFile(`${process.cwd()}/receipts/${fileName}`, buffer);
-  if (!deleteOld) sqlReq.input("trans_id", transId);
-  sqlReq.input("filename", fileName);
-  return sqlReq.query(
-    "INSERT INTO dbo.bm_receipts(trans_id, modified_date, filename) VALUES (@trans_id, getDate(), @filename);"
-  );
-}
-
 export async function PUT(req: NextRequest) {
-  const formData = await req.formData();
+  const transData: Transaction = await req.json();
 
-  if (formData.get("transdata") === undefined) return NextResponse.error();
-
-  const transData: Transaction = JSON.parse(
-    formData.get("transdata") as string
-  );
+  if (!transData) return NextResponse.error();
 
   if (transData.items.length === 0) return NextResponse.error();
 
@@ -116,9 +80,12 @@ export async function PUT(req: NextRequest) {
 
     await updateCashflow(sqlReq, transId, transData);
 
-    const file = formData.get("file") as File;
-    if (file !== undefined && file !== null) {
-      await saveReceiptFile(file, transId, sqlReq);
+    if (transData.receipt) {
+      sqlReq.input("transId", transId);
+      sqlReq.input("receiptId", transData.receipt.receipt_id);
+      await sqlReq.query(
+        "UPDATE dbo.bm_receipts set trans_id = @transID where receipt_id = @receiptId"
+      );
     }
 
     await trans.commit();
@@ -136,19 +103,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  const transData: Transaction = await req.json();
 
-  if (formData.get("transdata") === undefined)
-    return NextResponse.json(
-      { message: "Incorrect parameter!" },
-      { status: 400 }
-    );
-
-  const transData: Transaction = JSON.parse(
-    formData.get("transdata") as string
-  );
-
-  if (transData.trans_id === undefined)
+  if (!transData || transData.trans_id === undefined)
     return NextResponse.json(
       { message: "Transaction not found!" },
       { status: 404 }
@@ -183,9 +140,12 @@ export async function POST(req: NextRequest) {
 
     await updateCashflow(trans.request(), transData.trans_id, transData, true);
 
-    const file = formData.get("file") as File;
-    if (file !== undefined && file !== null) {
-      await saveReceiptFile(file, transData.trans_id, trans.request(), true);
+    if (transData.receipt) {
+      sqlReq.input("transId", transData.trans_id);
+      sqlReq.input("receiptId", transData.receipt.receipt_id);
+      await sqlReq.query(
+        "UPDATE dbo.bm_receipts set trans_id = @transID where receipt_id = @receiptId"
+      );
     }
 
     await trans.commit();

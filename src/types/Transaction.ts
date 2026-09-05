@@ -8,7 +8,7 @@ declare global {
     receipt?: Receipt;
     total?: number;
     sale_tax?: number;
-    isdraft?: Boolean;
+    isdraft?: boolean;
   };
 
   type TransItem = {
@@ -22,8 +22,8 @@ declare global {
 
   type Receipt = {
     receipt_id: number;
-    trans_id: number;
-    modified_date: Date;
+    trans_id?: number;
+    modified_date?: Date;
     filename: string;
   };
 }

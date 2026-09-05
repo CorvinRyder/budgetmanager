@@ -4,7 +4,7 @@ import { Button } from "@mui/material";
 import moment from "moment";
 import { useEffect, useState } from "react";
 
-const UploadingFile = ({ file, started }: { file: File; started: Boolean }) => {
+const UploadingFile = ({ file, started }: { file: File; started: boolean }) => {
   const [status, setStatus] = useState(0);
 
   useEffect(() => {
@@ -12,21 +12,31 @@ const UploadingFile = ({ file, started }: { file: File; started: Boolean }) => {
 
     const formData = new FormData();
     if (file !== undefined) formData.append("file", file);
+
     setStatus(1);
-    fetch("/api/AI/ReadReceipt", {
-      method: "POST",
+    fetch("/api/UploadReceipt", {
+      method: "PUT",
       body: formData,
-    }).then(async (readReceiptResult) => {
-      if (readReceiptResult.status !== 200) {
+    }).then(async (uploadResult) => {
+      if (uploadResult.status !== 200) {
         setStatus(-1);
+        return;
+      }
+      setStatus(2);
+      const receiptData: Receipt = await uploadResult.json();
+      const readReceiptResult = await fetch("/api/AI/ReadReceipt", {
+        method: "POST",
+        body: JSON.stringify(receiptData),
+      });
+      if (readReceiptResult.status !== 200) {
+        setStatus(-2);
         return;
       }
 
       const receiptList: ReceiptContent = await readReceiptResult.json();
       let dateTime = moment(receiptList.date_time);
       if (!dateTime.isValid()) dateTime = moment();
-
-      setStatus(2);
+      setStatus(3);
       const newTrans: Transaction = {
         transdate: dateTime.toDate(),
         store: receiptList.store_name,
@@ -42,33 +52,34 @@ const UploadingFile = ({ file, started }: { file: File; started: Boolean }) => {
             } as TransItem)
         ),
         isdraft: true,
+        receipt: receiptList.receipt,
       };
 
-      const formData = new FormData();
-      formData.append("transdata", JSON.stringify(newTrans));
-      formData.append("file", file);
-
-      const saveRespon = await fetch("/api/Transaction", {
+      const saveResult = await fetch("/api/Transaction", {
         method: "PUT",
-        body: formData,
+        body: JSON.stringify(newTrans),
       });
 
-      setStatus(3);
+      if (saveResult.status !== 200) {
+        setStatus(-3);
+        return;
+      }
+
+      setStatus(4);
     });
   }, [started]);
 
   return (
     <div>
       {file.name} - {(file.size / 1024).toFixed(0)}KB -{" "}
-      {status === 0
-        ? "Ready"
-        : status === 1
-        ? "AI Processing"
-        : status === 2
-        ? "Saving"
-        : status === 3
-        ? "Done"
-        : "Error!"}
+      {status === 0 && "Ready"}
+      {status === 1 && "Uploading"}
+      {status === -1 && "Failed to Upload!"}
+      {status === 2 && "AI Processing"}
+      {status === -2 && "Error when analyzing with AI!"}
+      {status === 3 && "Saving"}
+      {status === -3 && "Unable to save the transaction!"}
+      {status === 4 && "Done"}
     </div>
   );
 };

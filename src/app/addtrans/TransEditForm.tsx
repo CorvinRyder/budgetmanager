@@ -2,14 +2,7 @@
 
 import moment from "moment";
 import { TextField, Button, Switch, FormControlLabel } from "@mui/material";
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 import TransactionInput from "./TransactionInput";
 
@@ -23,8 +16,7 @@ type EditTransProps = {
 
 async function extractReceiptContent(
   setDialogParams: Dispatch<SetStateAction<AlertDialogParams>>,
-  file?: File,
-  path?: string
+  receipt?: Receipt
 ) {
   setDialogParams({
     open: true,
@@ -38,12 +30,9 @@ async function extractReceiptContent(
     noOkButton: true,
   });
 
-  const formData = new FormData();
-  if (file !== undefined) formData.append("file", file);
-  else if (path !== undefined) formData.append("filepath", path);
   const readReceiptResult = await await fetch("/api/AI/ReadReceipt", {
     method: "POST",
-    body: formData,
+    body: JSON.stringify(receipt),
   });
   if (readReceiptResult.status !== 200) {
     setDialogParams({
@@ -70,6 +59,7 @@ async function extractReceiptContent(
           category: i.category,
         } as TransItem)
     ),
+    receipt: receiptList.receipt,
   };
   setDialogParams({
     open: false,
@@ -137,14 +127,6 @@ export default function EditTransPage(props: EditTransProps) {
         } as Transaction)
       : (props.trans as Transaction)
   );
-  const [receiptFile, setReceiptFile] = useState<File>();
-  const receiptUrl = useMemo(() => {
-    if (receiptFile !== undefined && receiptFile !== null)
-      return URL.createObjectURL(receiptFile);
-    else if (curTrans.receipt?.filename)
-      return "/receipts/" + curTrans.receipt.filename;
-    else return "";
-  }, [receiptFile, curTrans.receipt?.filename]);
   const [dateUpdateKey, setDateUpdateKey] = useState<number>(Date.now());
   const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
     {} as AlertDialogParams
@@ -168,16 +150,45 @@ export default function EditTransPage(props: EditTransProps) {
 
   const openUploadDialog = () =>
     uploadReceiptDialog(async (file, useAI) => {
-      if (file !== undefined && useAI) {
-        const newTrans = await extractReceiptContent(setDialogParams, file);
+      let fileResult: Receipt | undefined = undefined;
+
+      if (file !== undefined) {
+        setDialogParams({
+          open: true,
+          title: "Uploading Receipt",
+          jsx: (
+            <div>
+              <span className="Loading material-symbols-outlined">sync</span>
+              Uploading Receipt to the server...
+            </div>
+          ),
+          noOkButton: true,
+        });
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadResult = await fetch("/api/UploadReceipt", {
+          method: "PUT",
+          body: formData,
+        });
+        fileResult = await uploadResult.json();
+        const newTrans = { ...curTrans, receipt: fileResult };
+        setCurTrans(newTrans);
+      }
+      if (useAI && !!fileResult) {
+        const newTrans = await extractReceiptContent(
+          setDialogParams,
+          fileResult
+        );
         if (newTrans !== undefined) {
           newTrans.trans_id = curTrans.trans_id;
           setCurTrans(newTrans);
           setDateUpdateKey(Date.now());
-
-          setReceiptFile(file);
         }
-      } else setReceiptFile(file);
+      } else {
+        setDialogParams({
+          open: false,
+        });
+      }
     });
 
   const [markAsFinal, setMarkAsFinal] = useState(false);
@@ -194,7 +205,7 @@ export default function EditTransPage(props: EditTransProps) {
             <div className="text-lg grow-0 ">Receipt</div>
             <div className="group flex flex-1 min-h-0">
               <div className="flex-1 object-contain h-full md:flex items-center justify-center">
-                {!receiptUrl ? (
+                {!curTrans.receipt?.filename ? (
                   <div onClick={() => openUploadDialog()}>
                     <span className="material-symbols-outlined align-middle">
                       Upload
@@ -204,11 +215,15 @@ export default function EditTransPage(props: EditTransProps) {
                 ) : (
                   <>
                     <img
-                      src={receiptUrl}
+                      src={"/receipts/" + curTrans.receipt.filename}
                       alt="Receipt Preview"
                       className="h-full object-contain md:block hidden"
                     />
-                    <a href={receiptUrl} target="_blank" className="md:hidden">
+                    <a
+                      href={"/receipts/" + curTrans.receipt.filename}
+                      target="_blank"
+                      className="md:hidden"
+                    >
                       <span className="material-symbols-outlined align-middle">
                         open_in_new
                       </span>{" "}
@@ -236,18 +251,18 @@ export default function EditTransPage(props: EditTransProps) {
                 >
                   Upload New Receipt
                 </Button>
-                {receiptUrl && (
+                {curTrans?.receipt?.filename && (
                   <Button
                     size="small"
                     variant="contained"
                     onClick={() => {
-                      window.open(receiptUrl);
+                      window.open("/receipts/" + curTrans?.receipt?.filename);
                     }}
                   >
                     View Full Size
                   </Button>
                 )}
-                {receiptUrl && (
+                {curTrans?.receipt?.filename && (
                   <Button
                     size="small"
                     variant="contained"
@@ -255,8 +270,7 @@ export default function EditTransPage(props: EditTransProps) {
                     onClick={async () => {
                       const newTrans = await extractReceiptContent(
                         setDialogParams,
-                        undefined,
-                        receiptUrl
+                        curTrans.receipt
                       );
                       if (newTrans !== undefined) {
                         newTrans.trans_id = curTrans.trans_id;
@@ -430,12 +444,8 @@ export default function EditTransPage(props: EditTransProps) {
                   </div>
                 ),
                 async OnDialogOk() {
-                  const formData = new FormData();
                   if (curTrans.isdraft && markAsFinal)
                     curTrans.isdraft = undefined;
-                  formData.append("transdata", JSON.stringify(curTrans));
-                  if (receiptFile !== undefined)
-                    formData.append("file", receiptFile);
                   setDialogParams({
                     open: true,
                     title: "Saving the Transaction Record",
@@ -451,7 +461,7 @@ export default function EditTransPage(props: EditTransProps) {
                   });
                   const result = await fetch("/api/Transaction", {
                     method: curTrans.trans_id ? "POST" : "PUT",
-                    body: formData,
+                    body: JSON.stringify(curTrans),
                   });
                   if (result.status === 200) router.push("/viewtrans");
                   else {

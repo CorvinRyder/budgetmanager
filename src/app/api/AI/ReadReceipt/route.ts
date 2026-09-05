@@ -5,11 +5,10 @@ import fs from "fs/promises";
 import { connectToDatabase } from "@/db";
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get("file") as File;
-  const filePath = formData.get("filepath") as string;
+  const { filename, receipt_id }: Receipt = await req.json();
+  const filePath = filename;
 
-  if (file === null && filePath === null)
+  if (filePath === null)
     return NextResponse.json(
       { message: "No image is uploaded" },
       { status: 400 }
@@ -35,10 +34,9 @@ export async function POST(req: NextRequest) {
     });
 
     let arrayBuff = undefined;
-    if (file !== null) arrayBuff = await file.arrayBuffer();
-    else if (filePath !== null) {
+    if (filePath !== null) {
       arrayBuff = (
-        await fs.readFile(process.cwd() + "/" + filePath, {
+        await fs.readFile(process.cwd() + "/receipts/" + filePath, {
           flag: "r",
         })
       ).buffer;
@@ -55,8 +53,7 @@ export async function POST(req: NextRequest) {
     const base64ImageData = Buffer.from(arrayBuff).toString("base64");
 
     let mimeType = "";
-    if (file !== null) mimeType = file.type;
-    else {
+    if (filePath) {
       mimeType = filePath.substring(filePath.lastIndexOf(".") + 1);
       console.debug(mimeType);
       if (mimeType === "pdf") mimeType = "application/pdf";
@@ -102,6 +99,7 @@ export async function POST(req: NextRequest) {
       );
     resultText = resultText?.substring(7, resultText.length - 3);
     const receiptList: ReceiptContent = JSON.parse(resultText || "");
+    receiptList.receipt = { filename, receipt_id };
     return NextResponse.json(receiptList, { status: 200 });
   } catch (err) {
     throw err;
