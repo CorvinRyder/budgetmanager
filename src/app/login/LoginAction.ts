@@ -2,11 +2,23 @@
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 
-export default async function HandleLogin(formData: FormData) {
+export default async function HandleLogin(prevState: any, formData: FormData) {
   const username = formData.get("username");
   const password = formData.get("password");
 
-  if (username === null || password === null) return;
+  console.debug(username, password, prevState);
+
+  if (
+    username === null ||
+    password === null ||
+    username !== "test-user" ||
+    password !== "test-password"
+  )
+    return {
+      status: 401,
+      message:
+        "The username and password combination does not match any record!",
+    };
 
   const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
@@ -27,4 +39,9 @@ export default async function HandleLogin(formData: FormData) {
     maxAge: 60 * 60 * 24, // 1 day expiration
     path: "/", // Available across your entire system
   });
+
+  return {
+    status: 200,
+    message: "OK",
+  };
 }
