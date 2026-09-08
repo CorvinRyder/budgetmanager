@@ -1,9 +1,14 @@
-"use client";
-
 import "../types";
-// import { Button, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import LoginForm from "./login/LoginForm";
+import { cookies } from "next/headers";
+
+type BgInfo = {
+  image: string;
+  title: string;
+  copyright: string;
+  cpUrl: string;
+};
 
 const LinkBlock = ({
   icon,
@@ -25,14 +30,26 @@ const LinkBlock = ({
   );
 };
 
-export default function Home() {
-  const [bgInfo, setBgInfo] = useState<BgInfo>();
-  useEffect(() => {
-    fetch("/api/GetWallpaper", { method: "GET" }).then(async (r) => {
-      const respJson = (await r.json()) as BgInfo;
-      setBgInfo(respJson);
-    });
-  }, []);
+export default async function Home() {
+  const resp = await fetch(
+    "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US&rnd=" +
+      Date.now(),
+    {
+      method: "GET",
+    }
+  );
+
+  const respJson = await resp.json();
+
+  const bgInfo: BgInfo = {
+    image: "https://www.bing.com" + respJson.images[0].url,
+    title: respJson.images[0].title,
+    copyright: respJson.images[0].copyright,
+    cpUrl: respJson.images[0].copyrightlink,
+  };
+
+  const cookieStore = await cookies();
+  const isLoggedIn = cookieStore.get("session-token") !== undefined;
 
   return (
     <div
@@ -42,72 +59,25 @@ export default function Home() {
       <div className="md:m-auto mx-5 md:w-md w-full my-auto p-4 xl:w-1/3 backdrop-blur-sm bg-white/50 rounded-2xl flex items-center xl:justify-center flex-col">
         <div className="text-3xl font-bold text-black">Budget Buddy</div>
         <div className="xl:flex-col md:m-2/10 w-full flex-row space-x-3 space-y-4 p-4">
-          <LinkBlock link="/viewtrans" text="Dashboard" icon="data_table" />
-          <LinkBlock
-            link="/addtrans"
-            text="New Transaction"
-            icon="playlist_add"
-          />
-          <LinkBlock link="/batchupload" text="Batch Upload" icon="stack" />
-          <LinkBlock
-            link="/shoppinglist"
-            text="Shopping List"
-            icon="playlist_add"
-          />
+          {isLoggedIn ? (
+            <>
+              <LinkBlock link="/viewtrans" text="Dashboard" icon="data_table" />
+              <LinkBlock
+                link="/addtrans"
+                text="New Transaction"
+                icon="playlist_add"
+              />
+              <LinkBlock link="/batchupload" text="Batch Upload" icon="stack" />
+              <LinkBlock
+                link="/shoppinglist"
+                text="Shopping List"
+                icon="playlist_add"
+              />
+            </>
+          ) : (
+            <LoginForm />
+          )}
         </div>
-        {/* {props.isPinging ? (
-          <div style={{ textAlign: "center", fontSize: "1.2em" }}>
-            Starting up the web API service...
-            <span className="Loading material-symbols-outlined">sync</span>
-          </div>
-        ) : isLoggingIn ? (
-          <div style={{ textAlign: "center", fontSize: "1.2em" }}>
-            Processing to log in, please wait...
-            <span className="Loading material-symbols-outlined">sync</span>
-          </div>
-        ) : (
-          <div className={styles.InputBox}>
-            <TextField
-              label="Email Address"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <TextField
-              label="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-            />
-            <FormControlLabel
-              control={
-                <Switch onClick={() => setIsRememberMe(!isRememberMe)} />
-              }
-              label="Remember me for 2 weeks"
-              checked={isRememberMe}
-            />
-            <Button
-              variant="contained"
-              onClick={() => submitLogin(email, password)}
-            >
-              Login
-            </Button>
-            <div className={styles.DivisionLine}>
-              <div />
-              <div>OR</div>
-              <div />
-            </div>
-            <Button
-              variant="contained"
-              onClick={() => {
-                setTimeout(() =>
-                  submitLogin("testuser@corvin.com", "7uzld7itropi1wew0ePr*")
-                );
-              }}
-            >
-              Login with test account
-            </Button>
-          </div>
-        )} */}
       </div>
 
       <div className="absolute bottom-5 left-5 w-64 p-5 backdrop-blur-sm bg-white/50">

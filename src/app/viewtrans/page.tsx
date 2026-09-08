@@ -11,6 +11,7 @@ import TopFiveSpending from "./charts/TopFiveSpending";
 import { useRouter } from "next/navigation";
 
 export default function ViewTrans() {
+  const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [month, setMonth] = useState(new Date());
   const [updateKey, setUpdateKey] = useState(Date.now());
@@ -23,8 +24,10 @@ export default function ViewTrans() {
     fetch(`/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`, {
       method: "GET",
     }).then(async (r) => {
-      setTrans((await r.json()) as Transaction[]);
       setLoading(false);
+      if (r.status === 500) {
+        setIsError(true);
+      } else setTrans((await r.json()) as Transaction[]);
     });
   }, [updateKey, month]);
 
@@ -87,6 +90,8 @@ export default function ViewTrans() {
             <span className="Loading material-symbols-outlined">sync</span>
             Loading transaction...
           </div>
+        ) : isError ? (
+          <div>Cannot load the transaction data!</div>
         ) : (
           <table className="stable-auto w-full">
             <thead className="bg-slate-100 border-b border-slate-200">
