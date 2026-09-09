@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import HomeContainer from "./homepage/HomeContainer";
-import LoginForm from "./homepage/login/LoginForm";
-import HomepageMenu from "./homepage/HomepageMenu";
+import HomeContainer from "./landingpage/HomeContainer";
+import LoginForm from "./landingpage/login/LoginForm";
+import HomepageMenu from "./landingpage/HomepageMenu";
 
 export default async function Home() {
   const cookieStore = await cookies();
