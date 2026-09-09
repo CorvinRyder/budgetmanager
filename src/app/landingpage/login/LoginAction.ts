@@ -5,8 +5,9 @@ import { cookies } from "next/headers";
 export default async function HandleLogin(prevState: any, formData: FormData) {
   const username = formData.get("username");
   const password = formData.get("password");
+  const rememberMe = formData.get("rememberMe") !== null;
 
-  console.debug(username, password, prevState);
+  console.debug(username, password, rememberMe, prevState);
 
   if (
     username === null ||
@@ -28,7 +29,7 @@ export default async function HandleLogin(prevState: any, formData: FormData) {
     .setProtectedHeader({ alg: "HS256" }) // Define the signing algorithm
     .setSubject(username as string) // The 'sub' claim (usually the User ID)
     .setIssuedAt() // The 'iat' claim (current timestamp)
-    .setExpirationTime("15m") // The 'exp' claim (e.g., 15 minutes, 2 hours, 1 day)
+    .setExpirationTime(rememberMe ? "2 weeks" : "30m") // The 'exp' claim (e.g., 15 minutes, 2 hours, 1 day)
     .sign(JWT_SECRET); // Cryptographically sign the token
 
   const cookieStore = await cookies();
@@ -36,7 +37,7 @@ export default async function HandleLogin(prevState: any, formData: FormData) {
     httpOnly: true, // Prevents client-side JS tampering (Critical for security)
     secure: true, // Ensures cookie is only sent over HTTPS
     sameSite: "strict", // Protects against CSRF attacks
-    maxAge: 60 * 60 * 24, // 1 day expiration
+    maxAge: 60 * 60 * (rememberMe ? 24 * 14 : 0.5), // 1 day expiration
     path: "/", // Available across your entire system
   });
 
