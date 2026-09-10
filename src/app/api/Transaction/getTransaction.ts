@@ -7,10 +7,7 @@ export default function getTransactions(
   month?: Date
 ): Promise<Array<Transaction>> {
   return new Promise(async (resolve) => {
-    const pool = await connectToDatabase();
-    const trans = pool.transaction();
-    await trans.begin();
-    const sqlReq = trans.request();
+    const sqlReq = (await connectToDatabase()).request();
     let sqlStatement = `
     select t1.trans_id, transdate, store, location, isdraft, sale_tax,
     (select 
@@ -52,7 +49,6 @@ export default function getTransactions(
         i.receipt = JSON.parse(i.receipt)[0];
       }
     });
-    pool.close();
     resolve(transactions);
   });
 }

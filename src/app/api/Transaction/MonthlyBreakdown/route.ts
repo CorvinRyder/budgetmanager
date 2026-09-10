@@ -15,13 +15,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
   dateParsedDate = dateParsed.toDate();
 
-  const pool = await connectToDatabase();
-  const trans = pool.transaction();
-  await trans.begin();
-  const sqlReq = trans.request();
-  sqlReq.input("yearmonth", dateParsedDate);
-  sqlReq.input("userId", userId);
-  const result = await sqlReq.query(`
+  const result = await (await connectToDatabase())
+    .request()
+    .input("yearmonth", dateParsedDate)
+    .input("userId", userId).query(`
     select bc.category , t1.amount, bb.amount as allowance, (t1.amount / bb.amount) as rate
     from (
       select category, sum(amount) as amount
@@ -40,7 +37,6 @@ export async function GET(req: NextRequest) {
     left join bm_budgetplanitems bb on t1.category = bb.item
     left join bm_categories bc on t1.category = bc.cat_code
     where bc.category is not null`);
-  pool.close();
   return NextResponse.json(
     result.recordset,
     { status: 200 } // 👈 Set HTTP status code

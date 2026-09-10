@@ -53,7 +53,5 @@ export async function PUT(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
-  } finally {
-    pool.close();
   }
 }

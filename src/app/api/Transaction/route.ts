@@ -72,10 +72,9 @@ export async function PUT(req: NextRequest) {
   if (transData.items.length === 0) return NextResponse.error();
 
   const pool = await connectToDatabase();
-  const trans = pool.transaction();
-  await trans.begin();
+  const trans = await pool.transaction().begin();
+  const sqlReq = pool.request();
   try {
-    const sqlReq = trans.request();
     sqlReq.input("trandate", transData.transdate);
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
@@ -107,8 +106,6 @@ export async function PUT(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
-  } finally {
-    pool.close();
   }
 }
 
@@ -131,10 +128,9 @@ export async function POST(req: NextRequest) {
     );
 
   const pool = await connectToDatabase();
-  const trans = pool.transaction();
-  await trans.begin();
+  const trans = await pool.transaction().begin();
+  const sqlReq = pool.request();
   try {
-    const sqlReq = trans.request();
     sqlReq.input("trans_id", transData.trans_id);
     sqlReq.input("transdate", transData.transdate);
     sqlReq.input("store", transData.store);
@@ -174,8 +170,6 @@ export async function POST(req: NextRequest) {
       { message: err },
       { status: 500 } // 👈 Set HTTP status code
     );
-  } finally {
-    pool.close();
   }
 }
 
@@ -201,11 +195,9 @@ export async function DELETE(req: NextRequest) {
     );
 
   const pool = await connectToDatabase();
-  const trans = pool.transaction();
+  const trans = await pool.transaction().begin();
+  const sqlReq = pool.request();
   try {
-    await trans.begin();
-    const sqlReq = trans.request();
-
     sqlReq.input("transid", transId);
     sqlReq.input("userid", userId);
 
@@ -234,8 +226,6 @@ export async function DELETE(req: NextRequest) {
   } catch (err) {
     await rollbackTrans(trans);
     return NextResponse.json({ message: err }, { status: 500 });
-  } finally {
-    pool.close();
   }
 }
 

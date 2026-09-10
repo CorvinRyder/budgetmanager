@@ -2,11 +2,11 @@ import sql from "mssql";
 import { env } from "process";
 
 const conStr: string = env.CONNSTR || "";
+const poolPromise = sql.connect(conStr);
 
-export async function connectToDatabase() {
+export async function connectToDatabase(): Promise<sql.ConnectionPool> {
   try {
-    const pool = await sql.connect(conStr);
-    return pool;
+    return await poolPromise;
   } catch (err) {
     console.error("Database connection failed:", err);
     throw err;

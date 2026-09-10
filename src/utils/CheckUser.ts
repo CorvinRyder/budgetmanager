@@ -22,19 +22,12 @@ export default async function CheckUser(
 
   if (!userId) return;
 
-  const pool = await connectToDatabase();
-  const trans = pool.transaction();
-  await trans.begin();
-  const sqlReq = trans.request();
-
-  sqlReq.input("userId", userId);
-
-  const result = await sqlReq.query(
-    `SELECT count(1) cnt FROM bm_users WHERE userid = @userId AND status = 'T'`
-  );
-
-  await trans.commit();
-  pool.close();
+  const result = await (await connectToDatabase())
+    .request()
+    .input("userId", userId)
+    .query(
+      `SELECT count(1) cnt FROM bm_users WHERE userid = @userId AND status = 'T'`
+    );
 
   return result.recordset[0]?.cnt > 0 ? userId : undefined;
 }

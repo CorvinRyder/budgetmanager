@@ -15,19 +15,14 @@ export default async function RegisterAction(
       status: 401,
       message: "Please provide username and password!",
     };
-  let pool;
-  let trans;
   try {
-    pool = await connectToDatabase();
-    trans = pool.transaction();
-    await trans.begin();
-    const sqlReq = trans.request();
-    sqlReq.input("user", username);
-    sqlReq.input("email", email);
-
-    const result = await sqlReq.query(
-      "SELECT count(1) cnt from bm_users where name=@user or email=@email"
-    );
+    const sqlReq = (await connectToDatabase()).request();
+    const result = await sqlReq
+      .input("user", username)
+      .input("email", email)
+      .query(
+        "SELECT count(1) cnt from bm_users where name=@user or email=@email"
+      );
 
     if (result.recordset[0]["cnt"] > 0)
       return {
@@ -52,8 +47,5 @@ export default async function RegisterAction(
       status: 401,
       message: "Error occurred when saving the registration data!",
     };
-  } finally {
-    await trans?.commit();
-    pool?.close();
   }
 }

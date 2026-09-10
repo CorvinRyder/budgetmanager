@@ -14,19 +14,14 @@ export default async function HandleLogin(
 
   console.debug(username, password, rememberMe, prevState);
 
-  let pool = undefined;
   try {
-    pool = await connectToDatabase();
-    const trans = pool.transaction();
-    await trans.begin();
-    const sqlReq = trans.request();
-
-    sqlReq.input("email", username?.toString());
-
     const result = (
-      await sqlReq.query(
-        "SELECT userid, name, password FROM bm_users where email = @email and status = 'T'"
-      )
+      await (await connectToDatabase())
+        .request()
+        .input("email", username?.toString())
+        .query(
+          "SELECT userid, name, password FROM bm_users where email = @email and status = 'T'"
+        )
     ).recordset[0];
 
     const hashedPassword = result?.["password"] || "FAKE_PASSWORD_HASH";
@@ -76,7 +71,5 @@ export default async function HandleLogin(
       status: 500,
       message: "Unable to log you in due to a server error!",
     };
-  } finally {
-    pool?.close();
   }
 }

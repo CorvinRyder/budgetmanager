@@ -16,9 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const pool = await connectToDatabase();
-    const trans = pool.transaction();
-    await trans.begin();
-    const sqlReq = trans.request();
+    const sqlReq = pool.request();
 
     const dbResult = await sqlReq.query(
       `select cat_code, ai_desc from bm_categories`
