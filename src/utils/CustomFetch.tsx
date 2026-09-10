@@ -14,8 +14,8 @@ export function CustomFetch() {
 
       if (resp.status === 401) {
         console.warn("Unauthorized request detected! Redirecting to login...");
-        router.push("/?error=Session+expired.+Please+log+in+again.");
-        return undefined;
+        router.push("/");
+        throw new Error("401!");
       }
 
       return resp;

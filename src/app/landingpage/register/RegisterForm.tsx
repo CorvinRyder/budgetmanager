@@ -1,6 +1,6 @@
 "use client";
 
-import { TextField, FormControlLabel, Switch, Button } from "@mui/material";
+import { TextField, Button } from "@mui/material";
 import { ChangeEventHandler, useActionState, useState } from "react";
 import RegisterAction from "./RegisterAction";
 import { useRouter } from "next/navigation";

@@ -5,7 +5,7 @@ import HandleLogin from "./LoginAction";
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function () {
+export default function LoginForm() {
   const [state, formAction, isPending] = useActionState(HandleLogin, {
     status: 200,
     message: "Pending",

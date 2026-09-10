@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/db";
 import bcrypt from "bcryptjs";
 
 export default async function RegisterAction(
-  prevState: any,
+  prevState: { status: number; message: string } | undefined,
   formData: FormData
 ) {
   const username = formData.get("username");

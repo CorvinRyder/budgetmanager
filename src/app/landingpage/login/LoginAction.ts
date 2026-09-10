@@ -4,7 +4,10 @@ import { cookies } from "next/headers";
 import { connectToDatabase } from "@/db";
 import bcrypt from "bcryptjs";
 
-export default async function HandleLogin(prevState: any, formData: FormData) {
+export default async function HandleLogin(
+  prevState: { status: number; message: string } | undefined,
+  formData: FormData
+) {
   const username = formData.get("username");
   const password = formData.get("password");
   const rememberMe = formData.get("rememberMe") !== null;

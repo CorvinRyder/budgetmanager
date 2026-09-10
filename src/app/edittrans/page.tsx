@@ -24,10 +24,8 @@ const LoadEditpage = async ({
 };
 
 export default async function Page({
-  params,
   searchParams,
 }: {
-  params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const userId = await CheckUser(undefined, await headers());

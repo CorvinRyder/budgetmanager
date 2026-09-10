@@ -9,14 +9,12 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
 );
 
-const protectedRoutes = ["/viewtrans", "/edittrans", "/receipts", , "/api"];
 const protectedNoRedirect = ["/receipts", "/api"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route || "")
-  );
+
+  const isProtected = pathname !== "/";
 
   const noRedirect = protectedNoRedirect.some((route) =>
     pathname.startsWith(route)
@@ -27,7 +25,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       if (!token) {
-        throw new Error("No token");
+        return redirectToLogin(request, false);
       }
 
       // 2. Cryptographically verify the token entirely in-memory
