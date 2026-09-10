@@ -9,27 +9,30 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
 );
 
-const protectedRoutes = ["/viewtrans", "/receipts", "/profile"];
+const protectedRoutes = ["/viewtrans", "/edittrans", "/receipts", , "/api"];
+const protectedNoRedirect = ["/receipts", "/api"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = protectedRoutes.some((route) =>
+    pathname.startsWith(route || "")
+  );
+
+  const noRedirect = protectedNoRedirect.some((route) =>
     pathname.startsWith(route)
   );
 
   if (isProtected) {
     const token = request.cookies.get("session-token")?.value;
 
-    if (!token) {
-      return redirectToLogin(request);
-    }
-
     try {
+      if (!token) {
+        throw new Error("No token");
+      }
+
       // 2. Cryptographically verify the token entirely in-memory
       // This checks the signature and the expiration time ('exp') automatically
       const { payload } = await jwtVerify(token, JWT_SECRET);
-
-      console.debug(payload);
 
       // Optional: Role-based authorization check using token payload data
       if (pathname.startsWith("/admin") && payload.role !== "admin") {
@@ -46,10 +49,9 @@ export async function middleware(request: NextRequest) {
           headers: requestHeaders,
         },
       });
-    } catch (error) {
-      // If verification fails (token tampered with, expired, or invalid signature)
-      console.error("JWT verification failed:", error);
-      return redirectToLogin(request);
+    } catch (e) {
+      console.error("failed to verify token", e);
+      return redirectToLogin(request, noRedirect);
     }
   }
 
@@ -57,7 +59,8 @@ export async function middleware(request: NextRequest) {
 }
 
 // Helper to redirect to login and preserve the destination URL
-function redirectToLogin(request: NextRequest) {
+function redirectToLogin(request: NextRequest, noRedirect: boolean) {
+  if (noRedirect) return forwardWithoutToken();
   const loginUrl = new URL("/", request.url);
   // loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
   const resp = NextResponse.redirect(loginUrl);
@@ -65,6 +68,12 @@ function redirectToLogin(request: NextRequest) {
   return resp;
 }
 
+function forwardWithoutToken() {
+  const resp = NextResponse.next();
+  resp.cookies.delete("session-token");
+  return resp;
+}
+
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

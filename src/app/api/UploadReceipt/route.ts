@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/db";
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
+import CheckUser from "@/utils/CheckUser";
 
 async function saveReceiptFile(file: File) {
   let fileName = file.name;
@@ -20,6 +21,9 @@ async function saveReceiptFile(file: File) {
 }
 
 export async function PUT(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const formData = await req.formData();
 
   const file = formData.get("file") as File;
@@ -34,9 +38,10 @@ export async function PUT(req: NextRequest) {
   try {
     const sqlReq = trans.request();
     sqlReq.input("filename", fileName);
+    sqlReq.input("userid", userId);
     const receiptId = (
       await sqlReq.query(
-        "INSERT INTO dbo.bm_receipts(trans_id, modified_date, filename) output inserted.receipt_id VALUES (-1, getDate(), @filename);"
+        "INSERT INTO dbo.bm_receipts(trans_id, modified_date, filename, userid) output inserted.receipt_id VALUES (-1, getDate(), @filename, @userid);"
       )
     ).recordset[0]["receipt_id"];
 

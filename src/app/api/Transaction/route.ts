@@ -3,8 +3,12 @@ import { connectToDatabase } from "@/db";
 import getTransactions from "./getTransaction";
 import sql from "mssql";
 import moment from "moment";
+import CheckUser from "@/utils/CheckUser";
 
 export async function GET(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const transIdStr = searchParams.get("transid");
   const yearmonth = searchParams.get("yearmonth");
@@ -25,7 +29,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
     dateParsedDate = dateParsed.toDate();
   }
-  return NextResponse.json(await getTransactions(transId, dateParsedDate));
+  return NextResponse.json(
+    await getTransactions(userId, transId, dateParsedDate)
+  );
 }
 
 async function updateCashflow(
@@ -56,6 +62,9 @@ async function updateCashflow(
 }
 
 export async function PUT(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const transData: Transaction = await req.json();
 
   if (!transData) return NextResponse.error();
@@ -71,9 +80,10 @@ export async function PUT(req: NextRequest) {
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("isdraft", transData.isdraft && "T");
+    sqlReq.input("userid", userId);
     const transId: number = (
       await sqlReq.query(
-        "INSERT INTO dbo.bm_transaction(transdate, store, location, isdraft) output inserted.trans_id VALUES(@trandate, @store, @location, @isdraft);"
+        "INSERT INTO dbo.bm_transaction(transdate, store, location, isdraft, userid) output inserted.trans_id VALUES(@trandate, @store, @location, @isdraft,@userId);"
       )
     ).recordset[0]["trans_id"];
     console.debug(transId);
@@ -84,7 +94,7 @@ export async function PUT(req: NextRequest) {
       sqlReq.input("transId", transId);
       sqlReq.input("receiptId", transData.receipt.receipt_id);
       await sqlReq.query(
-        "UPDATE dbo.bm_receipts set trans_id = @transID where receipt_id = @receiptId"
+        "UPDATE dbo.bm_receipts set trans_id = @transID where receipt_id = @receiptId and userid = @userid"
       );
     }
 
@@ -103,6 +113,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const transData: Transaction = await req.json();
 
   if (!transData || transData.trans_id === undefined)
@@ -127,10 +140,11 @@ export async function POST(req: NextRequest) {
     sqlReq.input("store", transData.store);
     sqlReq.input("location", transData.location);
     sqlReq.input("isdraft", transData.isdraft ? "T" : null);
+    sqlReq.input("userid", userId);
     const updateResult = await sqlReq.query(`
     UPDATE dbo.bm_transaction
     SET transdate=@transdate, store=@store, location=@location, isdraft=@isdraft
-    WHERE trans_id=@trans_id;`);
+    WHERE trans_id=@trans_id and userid = @userid;`);
     if (updateResult.rowsAffected[0] === 0) {
       return NextResponse.json(
         { message: "Transaction record not found!" },
@@ -166,6 +180,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const transIdStr = searchParams.get("transid");
 
@@ -190,9 +207,10 @@ export async function DELETE(req: NextRequest) {
     const sqlReq = trans.request();
 
     sqlReq.input("transid", transId);
+    sqlReq.input("userid", userId);
 
     const deleteResult = await sqlReq.query(
-      "UPDATE bm_transaction set deleted = 'T' where trans_id = @transid"
+      "UPDATE bm_transaction set deleted = 'T' where trans_id = @transid and userid = @userid"
     );
     if (deleteResult.rowsAffected[0] === 0)
       return NextResponse.json(

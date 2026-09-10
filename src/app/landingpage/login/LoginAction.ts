@@ -11,58 +11,69 @@ export default async function HandleLogin(prevState: any, formData: FormData) {
 
   console.debug(username, password, rememberMe, prevState);
 
-  const pool = await connectToDatabase();
-  const trans = pool.transaction();
-  await trans.begin();
-  const sqlReq = trans.request();
+  let pool = undefined;
+  try {
+    pool = await connectToDatabase();
+    const trans = pool.transaction();
+    await trans.begin();
+    const sqlReq = trans.request();
 
-  sqlReq.input("email", username?.toString());
+    sqlReq.input("email", username?.toString());
 
-  const result = (
-    await sqlReq.query(
-      "SELECT userid, name, password FROM bm_users where email = @email and status = 'T'"
-    )
-  ).recordset[0];
+    const result = (
+      await sqlReq.query(
+        "SELECT userid, name, password FROM bm_users where email = @email and status = 'T'"
+      )
+    ).recordset[0];
 
-  const hashedPassword = result?.["password"] || "FAKE_PASSWORD_HASH";
+    const hashedPassword = result?.["password"] || "FAKE_PASSWORD_HASH";
 
-  const isPasswordValid = await bcrypt.compare(
-    password?.toString() || "",
-    hashedPassword
-  );
+    const isPasswordValid = await bcrypt.compare(
+      password?.toString() || "",
+      hashedPassword
+    );
 
-  if (!isPasswordValid)
+    if (!isPasswordValid)
+      return {
+        status: 401,
+        message:
+          "The username and password combination does not match any record!",
+      };
+
+    const JWT_SECRET = new TextEncoder().encode(
+      process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
+    );
+
+    const token = await new SignJWT({
+      role: "user",
+      name: result?.["name"],
+    }) // Custom claims go here
+      .setProtectedHeader({ alg: "HS256" }) // Define the signing algorithm
+      .setSubject(result?.["userid"] as string) // The 'sub' claim (usually the User ID)
+      .setIssuedAt() // The 'iat' claim (current timestamp)
+      .setExpirationTime(rememberMe ? "2 weeks" : "30m") // The 'exp' claim (e.g., 15 minutes, 2 hours, 1 day)
+      .sign(JWT_SECRET); // Cryptographically sign the token
+
+    const cookieStore = await cookies();
+    cookieStore.set("session-token", token, {
+      httpOnly: true, // Prevents client-side JS tampering (Critical for security)
+      secure: true, // Ensures cookie is only sent over HTTPS
+      sameSite: "strict", // Protects against CSRF attacks
+      maxAge: 60 * 60 * (rememberMe ? 24 * 14 : 0.5), // 1 day expiration
+      path: "/", // Available across your entire system
+    });
+
     return {
-      status: 401,
-      message:
-        "The username and password combination does not match any record!",
+      status: 200,
+      message: "OK",
     };
-
-  const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
-  );
-
-  const token = await new SignJWT({
-    role: "user",
-    name: result?.["name"],
-  }) // Custom claims go here
-    .setProtectedHeader({ alg: "HS256" }) // Define the signing algorithm
-    .setSubject(result?.["userid"] as string) // The 'sub' claim (usually the User ID)
-    .setIssuedAt() // The 'iat' claim (current timestamp)
-    .setExpirationTime(rememberMe ? "2 weeks" : "30m") // The 'exp' claim (e.g., 15 minutes, 2 hours, 1 day)
-    .sign(JWT_SECRET); // Cryptographically sign the token
-
-  const cookieStore = await cookies();
-  cookieStore.set("session-token", token, {
-    httpOnly: true, // Prevents client-side JS tampering (Critical for security)
-    secure: true, // Ensures cookie is only sent over HTTPS
-    sameSite: "strict", // Protects against CSRF attacks
-    maxAge: 60 * 60 * (rememberMe ? 24 * 14 : 0.5), // 1 day expiration
-    path: "/", // Available across your entire system
-  });
-
-  return {
-    status: 200,
-    message: "OK",
-  };
+  } catch (e) {
+    console.debug(e);
+    return {
+      status: 500,
+      message: "Unable to log you in due to a server error!",
+    };
+  } finally {
+    pool?.close();
+  }
 }

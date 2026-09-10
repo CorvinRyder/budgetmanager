@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/db";
 import moment from "moment";
+import CheckUser from "@/utils/CheckUser";
 
 export async function GET(req: NextRequest) {
+  const userId = await CheckUser(req);
+  if (!userId) return NextResponse.json("", { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const yearmonth = searchParams.get("date");
   let dateParsedDate = undefined;
@@ -16,6 +20,7 @@ export async function GET(req: NextRequest) {
   await trans.begin();
   const sqlReq = trans.request();
   sqlReq.input("yearmonth", dateParsedDate);
+  sqlReq.input("userId", userId);
   const result = await sqlReq.query(`
     select bc.category , t1.amount, bb.amount as allowance, (t1.amount / bb.amount) as rate
     from (
@@ -23,7 +28,7 @@ export async function GET(req: NextRequest) {
       from (
         select LEFT(category, 1) as category, sum(amount) as amount
         from bm_cashflow bc 
-        inner join bm_transaction bt on bc.trans_id = bt.trans_id
+        inner join bm_transaction bt on bc.trans_id = bt.trans_id and bt.userid = @userId
         where bt.transdate 
         between datetrunc(MONTH, CAST(@yearmonth as datetime)) and 
         dateadd(MONTH, 1, datetrunc(MONTH, cast(@yearmonth as datetime)))-0.00001

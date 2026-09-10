@@ -77,7 +77,17 @@ export default function () {
           <div className="m-2 flex-0">OR</div>
           <div className="h-0.5 bg-gray-500 flex-1">&nbsp;</div>
         </div>
-        <Button variant="contained" type="submit">
+        <Button
+          variant="contained"
+          type="button"
+          onClick={(evt) => {
+            evt.preventDefault();
+            const form = document.forms[0];
+            form["username"].value = "testuser@testuser.com";
+            form["password"].value = "testuserpassword";
+            form.submit();
+          }}
+        >
           <span className="material-symbols-outlined align-middle mr-2">
             login
           </span>

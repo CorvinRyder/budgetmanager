@@ -1,4 +1,5 @@
 "use client";
+import { CustomFetch } from "@/utils/CustomFetch";
 import "./globals.css";
 import Link from "next/link";
 
@@ -20,6 +21,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <CustomFetch />
         <div className="size-full flex overflow-hidden md:flex-row flex-col">
           <div className="w-full flex md:w-30 bg-blue-950 flex-row md:flex-col">
             <div className="p-5 flex items-center justify-center space-x-3">

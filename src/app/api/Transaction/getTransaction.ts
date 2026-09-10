@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/db";
 import sql from "mssql";
 
 export default function getTransactions(
+  userId: string,
   transId?: number,
   month?: Date
 ): Promise<Array<Transaction>> {
@@ -35,8 +36,11 @@ export default function getTransactions(
       sqlStatement +=
         " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-0.00001";
     }
-    sqlStatement += "  and deleted is null";
-    if (!transId) sqlStatement += " or (isdraft = 'T' and deleted is null)";
+    sqlStatement += "  and deleted is null and userid = @userId";
+    sqlReq.input("userId", userId);
+    if (!transId)
+      sqlStatement +=
+        " or (isdraft = 'T' and deleted is null  and userid = @userId)";
     sqlStatement += " order by isdraft desc, transdate desc";
     const transResult = await sqlReq.query(sqlStatement);
     const transactions: Array<Transaction> = transResult.recordset;
