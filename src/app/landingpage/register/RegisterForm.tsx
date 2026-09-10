@@ -89,6 +89,7 @@ export default function RegisterForm() {
           defaultValue={formData.username}
           label="User Name"
           onChange={onChangeHandler}
+          required
         />
         <TextField
           name="email"
@@ -96,6 +97,7 @@ export default function RegisterForm() {
           label="Email Address"
           type="email"
           onChange={onChangeHandler}
+          required
         />
         <TextField
           name="password"
@@ -103,6 +105,7 @@ export default function RegisterForm() {
           label="Password"
           type="password"
           onChange={onChangeHandler}
+          required
         />
         <TextField
           name="cpassword"
@@ -110,6 +113,7 @@ export default function RegisterForm() {
           label="Confirm Password"
           type="password"
           onChange={onChangeHandler}
+          required
         />
         <div className="flex gap-4">
           <Button variant="contained" type="submit">

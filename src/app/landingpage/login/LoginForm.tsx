@@ -11,8 +11,8 @@ export default function () {
     message: "Pending",
   });
 
-  const [userName, setUserName] = useState("test-user");
-  const [password, setPassword] = useState("test-password");
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
 
   const router = useRouter();
 
@@ -39,12 +39,14 @@ export default function () {
         <TextField
           name="username"
           label="Email Address"
+          required
           value={userName}
           onChange={(evt) => setUserName(evt.target.value)}
         />
         <TextField
           name="password"
           label="Password"
+          required
           value={password}
           onChange={(evt) => setPassword(evt.target.value)}
           type="password"
@@ -79,13 +81,13 @@ export default function () {
         </div>
         <Button
           variant="contained"
-          type="button"
+          type="submit"
           onClick={(evt) => {
             evt.preventDefault();
             const form = document.forms[0];
             form["username"].value = "testuser@testuser.com";
             form["password"].value = "testuserpassword";
-            form.submit();
+            form.requestSubmit();
           }}
         >
           <span className="material-symbols-outlined align-middle mr-2">

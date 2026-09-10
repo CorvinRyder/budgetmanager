@@ -240,10 +240,32 @@ export default function EditTransPage(props: EditTransProps) {
                       </span>{" "}
                       Upload
                     </a>
+                    <br />
+                    <a
+                      href="#"
+                      className="md:hidden"
+                      onClick={async (evt) => {
+                        evt.preventDefault();
+                        const newTrans = await extractReceiptContent(
+                          setDialogParams,
+                          curTrans.receipt
+                        );
+                        if (newTrans !== undefined) {
+                          newTrans.trans_id = curTrans.trans_id;
+                          setCurTrans(newTrans);
+                          setDateUpdateKey(Date.now());
+                        }
+                      }}
+                    >
+                      <span className="material-symbols-outlined align-middle">
+                        cached
+                      </span>{" "}
+                      Re-analyze
+                    </a>
                   </>
                 )}
               </div>
-              <div className="gap-4 group-hover:flex flex-col justify-center items-center hidden absolute size-full bg-blue-300/50 top-0 left-0 rounded-xl">
+              <div className="gap-4 md:group-hover:flex flex-col justify-center items-center hidden absolute size-full bg-blue-300/50 top-0 left-0 rounded-xl">
                 <Button
                   size="small"
                   variant="contained"
@@ -252,35 +274,35 @@ export default function EditTransPage(props: EditTransProps) {
                   Upload New Receipt
                 </Button>
                 {curTrans?.receipt?.filename && (
-                  <Button
-                    size="small"
-                    variant="contained"
-                    onClick={() => {
-                      window.open("/receipts/" + curTrans?.receipt?.filename);
-                    }}
-                  >
-                    View Full Size
-                  </Button>
-                )}
-                {curTrans?.receipt?.filename && (
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="secondary"
-                    onClick={async () => {
-                      const newTrans = await extractReceiptContent(
-                        setDialogParams,
-                        curTrans.receipt
-                      );
-                      if (newTrans !== undefined) {
-                        newTrans.trans_id = curTrans.trans_id;
-                        setCurTrans(newTrans);
-                        setDateUpdateKey(Date.now());
-                      }
-                    }}
-                  >
-                    Re-analyze with AI
-                  </Button>
+                  <>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => {
+                        window.open("/receipts/" + curTrans?.receipt?.filename);
+                      }}
+                    >
+                      View Full Size
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="secondary"
+                      onClick={async () => {
+                        const newTrans = await extractReceiptContent(
+                          setDialogParams,
+                          curTrans.receipt
+                        );
+                        if (newTrans !== undefined) {
+                          newTrans.trans_id = curTrans.trans_id;
+                          setCurTrans(newTrans);
+                          setDateUpdateKey(Date.now());
+                        }
+                      }}
+                    >
+                      Re-analyze with AI
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
