@@ -1,11 +1,16 @@
 import path from "path";
 import fs from "fs";
 import { NextRequest, NextResponse } from "next/server";
+import CheckUser from "@/utils/CheckUser";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
 ) {
+  if (!(await CheckUser(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const filename = (await params).filename;
   const filePath = path.join(process.cwd(), "receipts", filename);
 

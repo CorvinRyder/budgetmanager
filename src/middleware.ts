@@ -9,7 +9,7 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
 );
 
-const protectedRoutes = ["/viewtrans", "/admin", "/profile"];
+const protectedRoutes = ["/viewtrans", "/receipts", "/profile"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
