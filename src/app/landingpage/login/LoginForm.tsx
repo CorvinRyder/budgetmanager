@@ -3,6 +3,7 @@
 import { TextField, FormControlLabel, Switch, Button } from "@mui/material";
 import HandleLogin from "./LoginAction";
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function () {
   const [state, formAction, isPending] = useActionState(HandleLogin, {
@@ -12,6 +13,8 @@ export default function () {
 
   const [userName, setUserName] = useState("test-user");
   const [password, setPassword] = useState("test-password");
+
+  const router = useRouter();
 
   return (
     <div className="w-full p-4 text-black text-center">
@@ -58,7 +61,11 @@ export default function () {
             </span>
             Login
           </Button>
-          <Button variant="contained" type="submit">
+          <Button
+            variant="contained"
+            type="button"
+            onClick={() => router.push("/?signup=T")}
+          >
             <span className="material-symbols-outlined align-middle mr-2">
               person
             </span>

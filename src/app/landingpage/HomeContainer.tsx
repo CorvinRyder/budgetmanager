@@ -1,5 +1,4 @@
 import "@/types";
-import { cookies } from "next/headers";
 import { ReactNode } from "react";
 
 type BgInfo = {

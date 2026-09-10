@@ -1,6 +1,8 @@
 "use server";
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { connectToDatabase } from "@/db";
+import bcrypt from "bcryptjs";
 
 export default async function HandleLogin(prevState: any, formData: FormData) {
   const username = formData.get("username");
@@ -9,12 +11,27 @@ export default async function HandleLogin(prevState: any, formData: FormData) {
 
   console.debug(username, password, rememberMe, prevState);
 
-  if (
-    username === null ||
-    password === null ||
-    username !== "test-user" ||
-    password !== "test-password"
-  )
+  const pool = await connectToDatabase();
+  const trans = pool.transaction();
+  await trans.begin();
+  const sqlReq = trans.request();
+
+  sqlReq.input("email", username?.toString());
+
+  const result = (
+    await sqlReq.query(
+      "SELECT userid, name, password FROM bm_users where email = @email and status = 'T'"
+    )
+  ).recordset[0];
+
+  const hashedPassword = result?.["password"] || "FAKE_PASSWORD_HASH";
+
+  const isPasswordValid = await bcrypt.compare(
+    password?.toString() || "",
+    hashedPassword
+  );
+
+  if (!isPasswordValid)
     return {
       status: 401,
       message:
@@ -25,9 +42,12 @@ export default async function HandleLogin(prevState: any, formData: FormData) {
     process.env.JWT_SECRET || "fallback-secret-use-a-real-one-in-env"
   );
 
-  const token = await new SignJWT({ role: "test" }) // Custom claims go here
+  const token = await new SignJWT({
+    role: "user",
+    name: result?.["name"],
+  }) // Custom claims go here
     .setProtectedHeader({ alg: "HS256" }) // Define the signing algorithm
-    .setSubject(username as string) // The 'sub' claim (usually the User ID)
+    .setSubject(result?.["userid"] as string) // The 'sub' claim (usually the User ID)
     .setIssuedAt() // The 'iat' claim (current timestamp)
     .setExpirationTime(rememberMe ? "2 weeks" : "30m") // The 'exp' claim (e.g., 15 minutes, 2 hours, 1 day)
     .sign(JWT_SECRET); // Cryptographically sign the token
