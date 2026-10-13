@@ -67,9 +67,7 @@ export async function PUT(req: NextRequest) {
 
   const transData: Transaction = await req.json();
 
-  if (!transData) return NextResponse.error();
-
-  if (transData.items.length === 0) return NextResponse.error();
+  if (!transData) return NextResponse.json("", { status: 401 });
 
   const pool = await connectToDatabase();
   const trans = await pool.transaction().begin();
@@ -87,7 +85,9 @@ export async function PUT(req: NextRequest) {
     ).recordset[0]["trans_id"];
     console.debug(transId);
 
-    await updateCashflow(sqlReq, transId, transData);
+    if (transData.items.length > 0) {
+      await updateCashflow(sqlReq, transId, transData);
+    }
 
     if (transData.receipt) {
       sqlReq.input("transId", transId);
@@ -98,7 +98,10 @@ export async function PUT(req: NextRequest) {
     }
 
     await trans.commit();
-    return NextResponse.json({ status: "ok" });
+    return NextResponse.json(
+      { message: "ok", transId: transId },
+      { status: 200 }
+    );
   } catch (err) {
     console.debug(err);
     await rollbackTrans(trans);

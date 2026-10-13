@@ -252,6 +252,7 @@ export default function EditTransPage(props: EditTransProps) {
                         );
                         if (newTrans !== undefined) {
                           newTrans.trans_id = curTrans.trans_id;
+                          newTrans.isdraft = curTrans.isdraft;
                           setCurTrans(newTrans);
                           setDateUpdateKey(Date.now());
                         }
@@ -295,6 +296,7 @@ export default function EditTransPage(props: EditTransProps) {
                         );
                         if (newTrans !== undefined) {
                           newTrans.trans_id = curTrans.trans_id;
+                          newTrans.isdraft = curTrans.isdraft;
                           setCurTrans(newTrans);
                           setDateUpdateKey(Date.now());
                         }

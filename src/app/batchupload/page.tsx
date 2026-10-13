@@ -4,7 +4,32 @@ import { Button } from "@mui/material";
 import moment from "moment";
 import { useEffect, useState } from "react";
 
-const UploadingFile = ({ file, started }: { file: File; started: boolean }) => {
+const STATUS_TEXT = [
+  "Ready",
+  "Uploading Receipt",
+  "Saving Transaction As Draft",
+  "AI Processing",
+  "Saving Transaction with the Receipt Data",
+  "Done",
+];
+const STATUS_ERROR_TEXT = [
+  "",
+  "Failed to Upload!",
+  "Unable to save the draft transaction!",
+  "Error when analyzing with AI!",
+  "Unable to save the transaction!",
+  "",
+];
+
+const UploadingFile = ({
+  file,
+  started,
+  onDelete,
+}: {
+  file: File;
+  started: boolean;
+  onDelete: () => void;
+}) => {
   const [status, setStatus] = useState(0);
 
   useEffect(() => {
@@ -22,22 +47,48 @@ const UploadingFile = ({ file, started }: { file: File; started: boolean }) => {
         setStatus(-1);
         return;
       }
-      setStatus(2);
+
       const receiptData: Receipt = await uploadResult.json();
+
+      let newTrans: Transaction = {
+        transdate: new Date(),
+        store: "<Draft>",
+        location: "<Draft>",
+        sale_tax: 0,
+        items: [],
+        isdraft: true,
+        receipt: receiptData,
+      };
+
+      setStatus(2);
+      const saveResultDraft = await fetch("/api/Transaction", {
+        method: "PUT",
+        body: JSON.stringify(newTrans),
+      });
+
+      if (saveResultDraft.status !== 200) {
+        setStatus(-2);
+        return;
+      }
+
+      const transId = (await saveResultDraft.json()).transId;
+
+      setStatus(3);
       const readReceiptResult = await fetch("/api/AI/ReadReceipt", {
         method: "POST",
         body: JSON.stringify(receiptData),
       });
       if (readReceiptResult.status !== 200) {
-        setStatus(-2);
+        setStatus(-3);
         return;
       }
 
       const receiptList: ReceiptContent = await readReceiptResult.json();
       let dateTime = moment(receiptList.date_time);
       if (!dateTime.isValid()) dateTime = moment();
-      setStatus(3);
-      const newTrans: Transaction = {
+
+      newTrans = {
+        trans_id: transId,
         transdate: dateTime.toDate(),
         store: receiptList.store_name,
         location: receiptList.store_addr,
@@ -55,31 +106,29 @@ const UploadingFile = ({ file, started }: { file: File; started: boolean }) => {
         receipt: receiptList.receipt,
       };
 
+      setStatus(4);
+
       const saveResult = await fetch("/api/Transaction", {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify(newTrans),
       });
 
       if (saveResult.status !== 200) {
-        setStatus(-3);
+        setStatus(-4);
         return;
       }
 
-      setStatus(4);
+      setStatus(5);
     });
   }, [started]);
 
   return (
-    <div>
+    <div className="border-2 p-2 flex flex-row items-center">
+      <span className="cursor-pointer mr-2" onClick={onDelete}>
+        ❌
+      </span>
       {file.name} - {(file.size / 1024).toFixed(0)}KB -{" "}
-      {status === 0 && "Ready"}
-      {status === 1 && "Uploading"}
-      {status === -1 && "Failed to Upload!"}
-      {status === 2 && "AI Processing"}
-      {status === -2 && "Error when analyzing with AI!"}
-      {status === 3 && "Saving"}
-      {status === -3 && "Unable to save the transaction!"}
-      {status === 4 && "Done"}
+      {status >= 0 ? STATUS_TEXT[status] : STATUS_ERROR_TEXT[-status]}
     </div>
   );
 };
@@ -120,7 +169,15 @@ export default function Page() {
       </div>
 
       {files.map((i, j) => (
-        <UploadingFile key={j} file={i} started={started} />
+        <UploadingFile
+          key={j}
+          file={i}
+          started={started}
+          onDelete={() => {
+            const newFiles = files.filter((_, index) => index !== j);
+            setFiles(newFiles);
+          }}
+        />
       ))}
 
       <div>

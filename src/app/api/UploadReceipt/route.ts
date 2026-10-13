@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
 
   const file = formData.get("file") as File;
 
-  if (file === undefined) return NextResponse.error();
+  if (file === undefined) return NextResponse.json("", { status: 401 });
 
   const fileName = await saveReceiptFile(file);
 
