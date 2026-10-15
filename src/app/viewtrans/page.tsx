@@ -2,15 +2,17 @@
 
 import AlertDialog from "@/components/AlertDialog";
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import TooltipSpan from "@/components/TooltipSpan";
 import Link from "next/link";
 import SpendingByCategory from "./charts/SpendingByCategory";
 import DailySpendingTrend from "./charts/DailySpendingTrend";
 import TopFiveSpending from "./charts/TopFiveSpending";
 import { useRouter } from "next/navigation";
+import { Button, TextField } from "@mui/material";
 
 export default function ViewTrans() {
+  const cachedTransactions = useRef<Transaction[]>([]);
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [month, setMonth] = useState(new Date());
@@ -18,6 +20,7 @@ export default function ViewTrans() {
   const [dialogParams, setDialogParams] = useState<AlertDialogParams>(
     {} as AlertDialogParams
   );
+  const [searchTerm, setSearchTerm] = useState("");
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   useEffect(() => {
     setLoading(true);
@@ -27,64 +30,94 @@ export default function ViewTrans() {
       setLoading(false);
       if (r.status === 500) {
         setIsError(true);
-      } else setTrans((await r.json()) as Transaction[]);
+      } else {
+        const trans: Transaction[] = await r.json();
+        cachedTransactions.current = trans;
+        setTrans(filterTrans);
+      }
     });
   }, [updateKey, month]);
+
+  const filterTrans = () =>
+    searchTerm === ""
+      ? cachedTransactions.current
+      : cachedTransactions.current.filter(
+          (i) =>
+            i.store.toLowerCase().indexOf(searchTerm) > -1 ||
+            i.items.some((j) => j.item.toLowerCase().indexOf(searchTerm) > -1)
+        );
+
+  useEffect(() => {
+    setTrans(filterTrans());
+  }, [searchTerm]);
 
   const router = useRouter();
 
   return (
-    <div className="gap-4 p-4 flex flex-col h-full ">
+    <div className="flex flex-col h-full p-2 gap-2">
       <AlertDialog params={dialogParams} />
-      <div className="flex w-full md:h-3/12 gap-4 ">
-        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+      <div className="flex-1 bg-slate-100 text-center flex size-full gap-4 text-slate-900">
+        <div className="flex-1 hidden md:flex">
+          <TextField
+            placeholder="🔎 Search for item name, store name..."
+            className="w-full border-cyan-500 focus:ring-cyan-500"
+            defaultValue={searchTerm}
+            onBlur={(e) => setSearchTerm(e.target.value)}
+            key={searchTerm}
+          />
+          <Button variant="outlined" onClick={() => setSearchTerm("")}>
+            ❌
+          </Button>
+        </div>
+        <div className="flex-1 hidden md:flex items-center justify-center">
+          <div
+            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2  font-medium shadow flex items-center cursor-pointer"
+            onClick={() => {
+              setMonth(moment(month).add(-1, "months").toDate());
+            }}
+            // disabled={loading}
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+          </div>
+          <div className="text-lg font-bold mx-3 flex items-center">
+            {moment(month).format("YYYY-MM")}
+          </div>
+          <div
+            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 font-medium shadow flex items-center cursor-pointer"
+            onClick={() => {
+              setMonth(moment(month).add(1, "months").toDate());
+            }}
+            // disabled={loading}
+          >
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </div>
+        </div>
+        <div className="flex-1 flex justify-end gap-2 p-2 ">
+          <div
+            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 font-medium shadow hidden md:flex cursor-pointer"
+            onClick={() => router.push("/addtrans")}
+          >
+            <span className="material-symbols-outlined">add</span>
+            <span>New Receipt</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex w-full md:h-3/12 gap-2">
+        <div className="hidden md:block flex-1 bg-slate-200/60 border-2 border-slate-300">
           <SpendingByCategory updateKey={updateKey} month={month} />
         </div>
-        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+        <div className="hidden md:block flex-1 bg-slate-200/60 border-2 border-slate-300">
           <DailySpendingTrend
             data={trans}
             updateKey={updateKey}
             month={month}
           />
         </div>
-        <div className="hidden md:block flex-2 bg-slate-200/60 border-2 border-slate-300 rounded-xl">
+        <div className="hidden md:block flex-1 bg-slate-200/60 border-2 border-slate-300">
           <TopFiveSpending data={trans} />
         </div>
-        <div className="flex-1 bg-slate-200/60 border-2 border-slate-300 rounded-xl text-center flex flex-col size-full py-2 px-4 gap-4">
-          <div className="flex md:flex-col flex-row gap-4">
-            <div className="flex-1 flex items-center justify-center">
-              <button
-                className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-                onClick={() => {
-                  setMonth(moment(month).add(-1, "months").toDate());
-                }}
-                disabled={loading}
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </button>
-              <div className="text-xl font-bold mx-3">
-                {moment(month).format("YYYY-MM")}
-              </div>
-              <button
-                className="bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-                onClick={() => {
-                  setMonth(moment(month).add(1, "months").toDate());
-                }}
-                disabled={loading}
-              >
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-            <button
-              className="flex-1 bg-cyan-400 text-black p-4 rounded-xl font-medium shadow hover:bg-cyan-500"
-              onClick={() => router.push("/addtrans")}
-            >
-              New Receipt
-            </button>
-          </div>
-        </div>
       </div>
-      <div className="p-2 h-full md:h-9/12 bg-white rounded-2xl shadow-md border border-slate-200 overflow-auto">
+      <div className="p-2 h-full md:h-9/12 bg-white shadow-md border border-slate-200 overflow-auto">
         {loading ? (
           <div style={{ textAlign: "center" }}>
             <span className="Loading material-symbols-outlined">sync</span>

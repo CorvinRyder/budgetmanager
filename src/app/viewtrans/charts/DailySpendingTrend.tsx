@@ -50,7 +50,7 @@ export default function DailySpendingTrend({
           {
             label: "Daily Spending Trend",
             data: dataPoint,
-            borderColor: "rgb(53, 162, 235)",
+            borderColor: "#0891B2",
           },
         ],
       }}
