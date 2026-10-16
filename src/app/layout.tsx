@@ -24,13 +24,13 @@ export default function RootLayout({
         <CustomFetch />
         <div className="size-full flex overflow-hidden md:flex-row flex-col">
           <div className="w-full flex md:w-30 bg-blue-950 flex-row md:flex-col">
-            <div className="p-5 flex items-center justify-center space-x-3">
+            <div className="py-3 flex items-center justify-center space-x-3 ml-3 md:ml-0">
               <span className="material-symbols-outlined text-cyan-400 xl-icon">
                 currency_exchange
               </span>
             </div>
-            <div className="text-cyan-400 space-x-4 md:space-x-0 md:space-y-2 flex md:flex-col items-center justify-end w-full md:items-start md:p-5 mx-5 md:mx-0">
-              <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+            <div className="text-cyan-400 space-x-4 md:space-x-0 md:space-y-2 flex md:flex-col items-center justify-end w-full md:items-start md:p-5 mx-5 md:mx-0 gap-2">
+              <div className="hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link href="/viewtrans" className="flex flex-col items-center">
                   <span
                     className="material-symbols-outlined align-middle lg-icon"
@@ -43,7 +43,7 @@ export default function RootLayout({
                   </span>
                 </Link>
               </div>
-              <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+              <div className="hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link href="/addtrans" className="flex flex-col items-center">
                   <span className="material-symbols-outlined align-middle lg-icon">
                     playlist_add
@@ -53,7 +53,7 @@ export default function RootLayout({
                   </span>
                 </Link>
               </div>
-              <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+              <div className="hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link
                   href="/batchupload"
                   className="flex flex-col items-center"
@@ -66,7 +66,20 @@ export default function RootLayout({
                   </span>
                 </Link>
               </div>
-              <div className="md:p-3 hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+              <div className="hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
+                <Link
+                  href="/taggedtrans"
+                  className="flex flex-col items-center"
+                >
+                  <span className="material-symbols-outlined align-middle lg-icon">
+                    tag
+                  </span>
+                  <span className="hidden md:block text-center text-base">
+                    Tag Insights
+                  </span>
+                </Link>
+              </div>
+              <div className="hover:bg-sky-700 hover:text-sky-200 text-xl rounded-lg cursor-pointer md:w-full">
                 <Link
                   href="/shoppinglist"
                   className="flex flex-col items-center"

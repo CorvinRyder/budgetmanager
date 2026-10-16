@@ -12,25 +12,33 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const transIdStr = searchParams.get("transid");
   const yearmonth = searchParams.get("yearmonth");
+  const tag = searchParams.get("tag");
+
+  let tagId = undefined;
   let transId = undefined;
+  let dateParsedDate = undefined;
+
   if (transIdStr !== null) {
     transId = parseInt(transIdStr);
     if (isNaN(transId)) {
       return NextResponse.json(
-        { message: "Wrong transaction ID type!" },
+        { message: "Invalid transaction ID!" },
         { status: 400 }
       );
     }
-  }
-  let dateParsedDate = undefined;
-  if (yearmonth !== null) {
+  } else if (yearmonth !== null) {
     const dateParsed = moment.utc(yearmonth);
     if (!dateParsed.isValid())
-      return NextResponse.json({ message: "Wrong date!" }, { status: 400 });
+      return NextResponse.json({ message: "Invalid date!" }, { status: 400 });
     dateParsedDate = dateParsed.toDate();
+  } else if (tag !== null) {
+    tagId = parseInt(tag);
+    if (isNaN(tagId)) {
+      return NextResponse.json({ message: "Invalid tag!" }, { status: 400 });
+    }
   }
   return NextResponse.json(
-    await getTransactions(userId, transId, dateParsedDate)
+    await getTransactions(userId, transId, dateParsedDate, tagId)
   );
 }
 

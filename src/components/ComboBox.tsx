@@ -24,6 +24,7 @@ type ComboBoxProps<T> = {
   value?: T;
   allowNewValue?: boolean;
   muiProps?: object | undefined;
+  className?: string;
 };
 
 type NewOptionValue<T> = T & {
@@ -36,6 +37,7 @@ export default function ComboBox<T>(props: ComboBoxProps<T>) {
   const [key, setKey] = useState(Date.now());
   return (
     <Autocomplete
+      className={props.className}
       key={key}
       value={props.value || null}
       onChange={(event, newV) => {

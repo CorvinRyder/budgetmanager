@@ -153,6 +153,15 @@ export default function ViewTrans() {
                         Draft
                       </div>
                     )}
+                    {i.tags && (
+                      <div className="flex flex-col gap-1 items-start text-xs font-mono ">
+                        {i.tags.map((j, k) => (
+                          <div key={k} className="bg-blue-200 p-1 rounded-md">
+                            #{j.tag_name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td>
                     {i.location ? (

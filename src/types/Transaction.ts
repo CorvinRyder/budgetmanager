@@ -9,6 +9,7 @@ declare global {
     total?: number;
     sale_tax?: number;
     isdraft?: boolean;
+    tags?: Array<Tag>;
   };
 
   type TransItem = {
@@ -25,6 +26,11 @@ declare global {
     trans_id?: number;
     modified_date?: Date;
     filename: string;
+  };
+
+  type Tag = {
+    tag_id: number;
+    tag_name: string;
   };
 }
 

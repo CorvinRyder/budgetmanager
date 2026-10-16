@@ -4,7 +4,8 @@ import sql from "mssql";
 export default function getTransactions(
   userId: string,
   transId?: number,
-  month?: Date
+  month?: Date,
+  tag?: number
 ): Promise<Array<Transaction>> {
   return new Promise(async (resolve) => {
     const sqlReq = (await connectToDatabase()).request();
@@ -20,25 +21,32 @@ export default function getTransactions(
     from dbo.bm_receipts t3
     where t1.trans_id = t3.trans_id FOR JSON PATH
     ) receipt,
+    (select bt.tag_id, bt.tag_name from bm_tags bt, bm_tag_trans btt where bt.tag_id = btt.tag_id and btt.transaction_id = t1.trans_id FOR JSON PATH
+    ) tags,
     (select cast(sum(amount) as numeric(5,2))
     from dbo.bm_cashflow where 
     dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
     from dbo.bm_transaction t1`;
     if (transId !== undefined) {
-      sqlStatement += " where t1.trans_id = @transid and deleted is null";
+      sqlStatement += " where t1.trans_id = @transid";
       sqlReq.input("transid", transId);
+    } else if (tag !== undefined) {
+      sqlReq.input("tag", tag);
+      sqlStatement +=
+        ", dbo.bm_tag_trans btt where btt.transaction_id = t1.trans_id and btt.tag_id = @tag";
     } else {
       if (month === undefined) month = new Date();
       sqlReq.input("yearmonth", sql.DateTime, month);
       sqlStatement +=
         " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-0.00001";
     }
-    sqlStatement += "  and deleted is null and userid = @userId";
+    sqlStatement += " and t1.deleted is null and userid = @userId";
     sqlReq.input("userId", userId);
-    if (!transId)
+    if (!transId && !tag)
       sqlStatement +=
-        " or (isdraft = 'T' and deleted is null  and userid = @userId)";
+        " or (isdraft = 'T' and t1.deleted is null  and userid = @userId)";
     sqlStatement += " order by isdraft desc, transdate desc";
+
     const transResult = await sqlReq.query(sqlStatement);
     const transactions: Array<Transaction> = transResult.recordset;
     transactions.forEach((i) => {
@@ -47,6 +55,9 @@ export default function getTransactions(
       }
       if (typeof i.receipt === "string") {
         i.receipt = JSON.parse(i.receipt)[0];
+      }
+      if (typeof i.tags === "string") {
+        i.tags = JSON.parse(i.tags);
       }
     });
     resolve(transactions);
