@@ -10,6 +10,7 @@ import DailySpendingTrend from "./charts/DailySpendingTrend";
 import TopFiveSpending from "./charts/TopFiveSpending";
 import { useRouter } from "next/navigation";
 import { Button, TextField } from "@mui/material";
+import TaggingUI from "./TaggingUI";
 
 export default function ViewTrans() {
   const cachedTransactions = useRef<Transaction[]>([]);
@@ -52,6 +53,40 @@ export default function ViewTrans() {
   }, [searchTerm]);
 
   const router = useRouter();
+
+  const updateTags = async function (transId: number, tags: Array<Tag>) {
+    await fetch("/api/Tags", {
+      method: "PUT",
+      body: JSON.stringify({ transId, tags }),
+    });
+    const trans = cachedTransactions.current.find(
+      (i) => i.trans_id === transId
+    );
+    if (!trans) {
+      console.debug("TRANS not found");
+      return;
+    }
+    trans.tags = tags;
+    setTrans([...cachedTransactions.current]);
+  };
+
+  const showTaggingWindow = function (transId: number, isSave: boolean) {
+    setDialogParams({
+      open: true,
+      title: "Tag Transaction",
+      jsx: (
+        <TaggingUI
+          isSave={isSave}
+          onReadyToClose={(tags) => updateTags(transId, tags)}
+        />
+      ),
+      OnDialogOk() {
+        showTaggingWindow(transId, true);
+        setTimeout(() => setDialogParams({ open: false }), 200);
+      },
+      OnDialogCancel() {},
+    });
+  };
 
   return (
     <div className="flex flex-col h-full p-2 gap-2">
@@ -162,6 +197,16 @@ export default function ViewTrans() {
                         ))}
                       </div>
                     )}
+                    <div className="flex flex-col gap-1 items-start text-xs font-mono">
+                      <div
+                        className="bg-cyan-500 p-1 rounded-md text-white cursor-pointer"
+                        onClick={() =>
+                          showTaggingWindow(i.trans_id || 0, false)
+                        }
+                      >
+                        ➕ Tags
+                      </div>
+                    </div>
                   </td>
                   <td>
                     {i.location ? (

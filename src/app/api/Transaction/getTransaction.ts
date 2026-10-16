@@ -21,7 +21,7 @@ export default function getTransactions(
     from dbo.bm_receipts t3
     where t1.trans_id = t3.trans_id FOR JSON PATH
     ) receipt,
-    (select bt.tag_id, bt.tag_name from bm_tags bt, bm_tag_trans btt where bt.tag_id = btt.tag_id and btt.transaction_id = t1.trans_id FOR JSON PATH
+    (select bt.tag_id, bt.tag_name from bm_tags bt, bm_tag_trans btt where btt.deleted is null and bt.tag_id = btt.tag_id and btt.transaction_id = t1.trans_id and bt.user_id = @userId FOR JSON PATH
     ) tags,
     (select cast(sum(amount) as numeric(5,2))
     from dbo.bm_cashflow where 
@@ -33,7 +33,7 @@ export default function getTransactions(
     } else if (tag !== undefined) {
       sqlReq.input("tag", tag);
       sqlStatement +=
-        ", dbo.bm_tag_trans btt where btt.transaction_id = t1.trans_id and btt.tag_id = @tag";
+        ", dbo.bm_tag_trans btt where btt.transaction_id = t1.trans_id and btt.tag_id = @tag and btt.deleted is null";
     } else {
       if (month === undefined) month = new Date();
       sqlReq.input("yearmonth", sql.DateTime, month);

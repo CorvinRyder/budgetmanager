@@ -3,17 +3,15 @@
 import ComboBox from "@/components/ComboBox";
 import TooltipSpan from "@/components/TooltipSpan";
 import moment from "moment";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import getTransactions from "../api/Transaction/getTransaction";
-import CheckUser from "@/utils/CheckUser";
 
 export default function TagTrans() {
-  const [loading, setLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  // const [isError, setIsError] = useState(false);
   const [tagList, setTagList] = useState<Array<Tag>>([]);
   const [tag, setTag] = useState<Tag>();
   const [trans, setTrans] = useState<Array<Transaction>>([]);
+  const [updateKey, setUpdateKey] = useState(Date.now());
 
   useEffect(() => {
     (async () => {
@@ -27,11 +25,13 @@ export default function TagTrans() {
   useEffect(() => {
     (async () => {
       if (!tag) return;
+      setLoading(true);
       const resp = await fetch("/api/Transaction?tag=" + tag?.tag_id);
       const trans: Array<Transaction> = await resp.json();
       setTrans(trans);
+      setLoading(false);
     })();
-  }, [tag]);
+  }, [tag, updateKey]);
 
   return (
     <div className="flex flex-col h-full p-2 gap-2">
@@ -96,7 +96,7 @@ export default function TagTrans() {
             <span className="Loading material-symbols-outlined">sync</span>
             Loading transaction...
           </div>
-        ) : isError ? (
+        ) : false ? (
           <div>Cannot load the transaction data!</div>
         ) : (
           <table className="stable-auto w-full">
@@ -121,8 +121,27 @@ export default function TagTrans() {
                     {i.tags && (
                       <div className="flex flex-col gap-1 items-start text-xs font-mono ">
                         {i.tags.map((j, k) => (
-                          <div key={k} className="bg-blue-200 p-1 rounded-md">
-                            #{j.tag_name}
+                          <div
+                            key={k}
+                            className="bg-blue-200 p-1 rounded-md flex gap-3"
+                          >
+                            <div>#{j.tag_name}</div>
+                            <div
+                              className="cursor-pointer"
+                              onClick={async () => {
+                                setLoading(true);
+                                await fetch("/api/Tags", {
+                                  method: "DELETE",
+                                  body: JSON.stringify({
+                                    transId: i.trans_id,
+                                    tags: [j],
+                                  }),
+                                });
+                                setUpdateKey(Date.now());
+                              }}
+                            >
+                              ❌
+                            </div>
                           </div>
                         ))}
                       </div>
