@@ -1,6 +1,7 @@
 "use client";
 
 import ComboBox from "@/components/ComboBox";
+import RatingWidget from "@/components/RatingWidget";
 import TooltipSpan from "@/components/TooltipSpan";
 import moment from "moment";
 import { useEffect, useState } from "react";
@@ -107,6 +108,7 @@ export default function TagTrans() {
                 <th className="py-4">Receipt</th>
                 <th className="py-4">Items</th>
                 <th className="py-4">Total</th>
+                <td className="py-4">Rating</td>
                 {/* <th className="py-4">Actions</th> */}
               </tr>
             </thead>
@@ -190,6 +192,16 @@ export default function TagTrans() {
                       ))}
                   </td>
                   <td>{i.total && "$" + Math.abs(i.total).toFixed(2)}</td>
+                  <td>
+                    <RatingWidget
+                      transaction={i}
+                      onChange={(newTrans) => {
+                        const newArr = [...trans];
+                        newArr[j] = newTrans;
+                        setTrans(newArr);
+                      }}
+                    />
+                  </td>
                   {/* <td>
                     <Link href={`/edittrans?transid=${i.trans_id}`}>
                       <span className="material-symbols-outlined ActionBtn">

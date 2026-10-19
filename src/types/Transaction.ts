@@ -10,6 +10,14 @@ declare global {
     sale_tax?: number;
     isdraft?: boolean;
     tags?: Array<Tag>;
+    rating?: number;
+    comment?: string;
+    ratingInfo?: Array<RatingInfo>;
+  };
+
+  type RatingInfo = {
+    rating?: number;
+    comment?: string;
   };
 
   type TransItem = {

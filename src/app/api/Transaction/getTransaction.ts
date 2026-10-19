@@ -23,6 +23,8 @@ export default function getTransactions(
     ) receipt,
     (select bt.tag_id, bt.tag_name from bm_tags bt, bm_tag_trans btt where btt.deleted is null and bt.tag_id = btt.tag_id and btt.transaction_id = t1.trans_id and bt.user_id = @userId FOR JSON PATH
     ) tags,
+    (select rating, comment from bm_trans_rating br where br.trans_id = t1.trans_id FOR JSON PATH
+    ) ratingInfo,     
     (select cast(sum(amount) as numeric(5,2))
     from dbo.bm_cashflow where 
     dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
@@ -58,6 +60,11 @@ export default function getTransactions(
       }
       if (typeof i.tags === "string") {
         i.tags = JSON.parse(i.tags);
+      }
+      if (typeof i.ratingInfo === "string") {
+        const obj = JSON.parse(i.ratingInfo) as Array<RatingInfo>;
+        i.comment = obj[0].comment;
+        i.rating = obj[0].rating;
       }
     });
     resolve(transactions);

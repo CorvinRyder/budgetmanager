@@ -11,6 +11,7 @@ import TopFiveSpending from "./charts/TopFiveSpending";
 import { useRouter } from "next/navigation";
 import { Button, TextField } from "@mui/material";
 import TaggingUI from "./TaggingUI";
+import RatingWidget from "@/components/RatingWidget";
 
 export default function ViewTrans() {
   const cachedTransactions = useRef<Transaction[]>([]);
@@ -250,7 +251,17 @@ export default function ViewTrans() {
                         </div>
                       ))}
                   </td>
-                  <td>{i.total && "$" + Math.abs(i.total).toFixed(2)}</td>
+                  <td>
+                    {i.total && "$" + Math.abs(i.total).toFixed(2)}
+                    <RatingWidget
+                      transaction={i}
+                      onChange={(newTrans) => {
+                        const newArr = [...trans];
+                        newArr[j] = newTrans;
+                        setTrans(newArr);
+                      }}
+                    />
+                  </td>
                   <td>
                     <Link href={`/edittrans?transid=${i.trans_id}`}>
                       <span className="material-symbols-outlined ActionBtn">

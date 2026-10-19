@@ -1,19 +1,40 @@
-import Styles from "./TooltipSpan.module.css";
-import { ReactNode } from "react";
-type ToolTipSpanProps = {
-  tooltip: string;
-  children?: ReactNode;
-};
+import React, { useState } from "react";
+import styles from "./TooltipSpan.module.css";
 
-const TooltipSpan = function (props: ToolTipSpanProps) {
+/**
+ * A reusable span tooltip component.
+ * @param {string} content - The text or node displayed inside the tooltip box.
+ * @param {React.ReactNode} children - The trigger element/text wrapped by the tooltip.
+ */
+const TooltipSpan = ({
+  tooltip,
+  children,
+}: {
+  tooltip: string;
+  children: React.ReactNode;
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+
   return (
     <span
-      className={`${!!props.tooltip ? Styles.tooltip : ""}`}
-      data-tooltip={props.tooltip}
+      className={styles.tooltipContainer}
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+      onFocus={() => setIsVisible(true)}
+      onBlur={() => setIsVisible(false)}
+      tabIndex={0}
+      role="button"
+      aria-describedby="tooltip-content"
     >
-      {props.children}
+      {children}
+      <span
+        id="tooltip-content"
+        role="tooltip"
+        className={`${styles.tooltipBox} ${isVisible ? styles.visible : ""}`}
+      >
+        <pre>{tooltip}</pre>
+      </span>
     </span>
   );
 };
-
 export default TooltipSpan;
