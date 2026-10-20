@@ -8,7 +8,6 @@ import Link from "next/link";
 import SpendingByCategory from "./charts/SpendingByCategory";
 import DailySpendingTrend from "./charts/DailySpendingTrend";
 import TopFiveSpending from "./charts/TopFiveSpending";
-import { useRouter } from "next/navigation";
 import { Button, TextField } from "@mui/material";
 import TaggingUI from "./TaggingUI";
 import RatingWidget from "@/components/RatingWidget";
@@ -23,22 +22,45 @@ export default function ViewTrans() {
     {} as AlertDialogParams
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeMode, setActiveMode] = useState("monthly"); // 'monthly' | 'tags' | 'journey'
   const [trans, setTrans] = useState<Array<Transaction>>([]);
+  const [tagList, setTagList] = useState<Array<Tag>>([]);
+  const [tag, setTag] = useState<Tag>();
+
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`, {
-      method: "GET",
-    }).then(async (r) => {
-      setLoading(false);
+
+    const reqUrl =
+      activeMode === "monthly"
+        ? `/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`
+        : activeMode === "tags"
+        ? `/api/Transaction?tag=${tag?.tag_id}`
+        : activeMode === "journey"
+        ? `/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`
+        : undefined;
+
+    if (typeof reqUrl === "undefined") return;
+
+    fetch(reqUrl).then(async (r) => {
       if (r.status === 500) {
         setIsError(true);
       } else {
         const trans: Transaction[] = await r.json();
         cachedTransactions.current = trans;
         setTrans(filterTrans);
+        setLoading(false);
       }
     });
-  }, [updateKey, month]);
+  }, [updateKey, month, tag, activeMode]);
+
+  useEffect(() => {
+    (async () => {
+      const resp = await fetch("/api/Tags", { method: "GET" });
+      const tags: Array<Tag> = await resp.json();
+      setTagList(tags.sort((a, b) => a.tag_name.localeCompare(b.tag_name)));
+      if (tags.length > 0) setTag(tags[0]);
+    })();
+  }, []);
 
   const filterTrans = () =>
     searchTerm === ""
@@ -46,14 +68,15 @@ export default function ViewTrans() {
       : cachedTransactions.current.filter(
           (i) =>
             i.store.toLowerCase().indexOf(searchTerm) > -1 ||
-            i.items.some((j) => j.item.toLowerCase().indexOf(searchTerm) > -1)
+            (i.items &&
+              i.items.some(
+                (j) => j.item.toLowerCase().indexOf(searchTerm) > -1
+              ))
         );
 
   useEffect(() => {
     setTrans(filterTrans());
   }, [searchTerm]);
-
-  const router = useRouter();
 
   const updateTags = async function (transId: number, tags: Array<Tag>) {
     await fetch("/api/Tags", {
@@ -92,49 +115,143 @@ export default function ViewTrans() {
   return (
     <div className="flex flex-col h-full p-2 gap-2">
       <AlertDialog params={dialogParams} />
-      <div className="flex-1 bg-slate-100 text-center flex size-full gap-4 text-slate-900">
-        <div className="flex-1 hidden md:flex">
-          <TextField
-            placeholder="🔎 Search for item name, store name..."
-            className="w-full border-cyan-500 focus:ring-cyan-500"
-            defaultValue={searchTerm}
-            onBlur={(e) => setSearchTerm(e.target.value)}
-            key={searchTerm}
-          />
-          <Button variant="outlined" onClick={() => setSearchTerm("")}>
-            ❌
-          </Button>
+      <div className="inline-flex items-center gap-2 p-1.5 bg-slate-200/80 border-2 border-slate-300">
+        {/* 1. Monthly Spending Mode */}
+        <button
+          onClick={() => setActiveMode("monthly")}
+          className={`group relative flex items-center px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out ${
+            activeMode === "monthly"
+              ? "bg-teal-100 text-teal-800 border-teal-300 shadow-sm border "
+              : "text-slate-500 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
+          }`}
+        >
+          <span className="material-symbols-outlined shrink-0 transition-transform group-hover:scale-110">
+            calendar_month
+          </span>
+          <span
+            className={`hidden overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ml-2 ${
+              activeMode === "monthly" ? "md:block" : "md:hidden"
+            }`}
+          >
+            Monthly Spending
+          </span>
+        </button>
+
+        {/* 2. Tag Insights Mode */}
+        <button
+          onClick={() => setActiveMode("tags")}
+          className={`group relative flex items-center px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out ${
+            activeMode === "tags"
+              ? "bg-sky-100 text-sky-800 border-sky-300 shadow-sm border"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
+          }`}
+        >
+          <span className="material-symbols-outlined shrink-0 transition-transform group-hover:scale-110">
+            tag
+          </span>
+          <span
+            className={`hidden overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ml-2 ${
+              activeMode === "tags" ? "md:block" : "md:hidden"
+            }`}
+          >
+            Tag Insights
+          </span>
+        </button>
+
+        {/* 3. Spending Journey Mode */}
+        <button
+          onClick={() => setActiveMode("journey")}
+          className={`group relative flex items-center px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-in-out ${
+            activeMode === "journey"
+              ? "bg-amber-100 text-amber-800 border-amber-300 shadow-sm border"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
+          }`}
+        >
+          <span className="material-symbols-outlined shrink-0 transition-transform group-hover:scale-110">
+            star_half
+          </span>
+          <span
+            className={`hidden overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ml-2 ${
+              activeMode === "journey" ? "md:block" : "md:hidden"
+            }`}
+          >
+            Spending Journey
+          </span>
+        </button>
+
+        {/* Dynamic Contextual Filter Controls Area */}
+        <div className="flex items-center gap-2 pl-3 ml-1 border-l border-slate-800">
+          {activeMode === "monthly" && (
+            <div className="flex-1 flex items-center justify-center">
+              <div
+                className="hidden md:flex bg-cyan-500 hover:bg-cyan-600 text-white p-2  font-medium shadow items-center cursor-pointer"
+                onClick={() => {
+                  setMonth(moment(month).add(-1, "months").toDate());
+                }}
+                // disabled={loading}
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </div>
+              <input
+                type="month"
+                onChange={(e) => {
+                  const month = e.target.value;
+                  setMonth(moment(month).toDate());
+                }}
+                value={moment(month).format("YYYY-MM")}
+                className="px-2.5 py-1 text-lg font-medium bg-white text-slate-800 border border-slate-300 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm"
+              />
+              <div
+                className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 font-medium shadow hidden md:flex items-center cursor-pointer"
+                onClick={() => {
+                  setMonth(moment(month).add(1, "months").toDate());
+                }}
+                // disabled={loading}
+              >
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </div>
+            </div>
+          )}
+
+          {activeMode === "tags" && (
+            <select
+              onChange={(e) => {
+                const id = parseInt(e.target.value);
+                if (isNaN(id)) return;
+                const tagObj = tagList.find((i) => i.tag_id === id);
+                setTag(tagObj);
+              }}
+              className="px-2.5 py-1 text-lg font-medium bg-white text-slate-700 border border-slate-700/60 rounded-md focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
+            >
+              {tagList.map((i, j) => (
+                <option key={j} value={i.tag_id}>
+                  #{i.tag_name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {activeMode === "journey" && (
+            <select className="px-2.5 py-1 text-lg font-medium bg-white text-slate-700 border border-slate-700/60 rounded-md focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all">
+              <option value="all">All Rated & Notes</option>
+              <option value="5star">5 Stars (High Value)</option>
+              <option value="regrets">1-2 Stars (Regrets)</option>
+            </select>
+          )}
         </div>
-        <div className="flex-1 hidden md:flex items-center justify-center">
-          <div
-            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2  font-medium shadow flex items-center cursor-pointer"
-            onClick={() => {
-              setMonth(moment(month).add(-1, "months").toDate());
-            }}
-            // disabled={loading}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </div>
-          <div className="text-lg font-bold mx-3 flex items-center">
-            {moment(month).format("YYYY-MM")}
-          </div>
-          <div
-            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 font-medium shadow flex items-center cursor-pointer"
-            onClick={() => {
-              setMonth(moment(month).add(1, "months").toDate());
-            }}
-            // disabled={loading}
-          >
-            <span className="material-symbols-outlined">arrow_forward</span>
-          </div>
-        </div>
-        <div className="flex-1 flex justify-end gap-2 p-2 ">
-          <div
-            className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 font-medium shadow hidden md:flex cursor-pointer"
-            onClick={() => router.push("/addtrans")}
-          >
-            <span className="material-symbols-outlined">add</span>
-            <span>New Receipt</span>
+
+        <div className="flex items-center gap-2 pl-3 ml-1 border-l border-slate-800">
+          <div className="flex-1 hidden md:flex">
+            <TextField
+              placeholder="🔎 Search for item name, store name..."
+              className="w-full border-cyan-500 focus:ring-cyan-500"
+              defaultValue={searchTerm}
+              onBlur={(e) => setSearchTerm(e.target.value)}
+              key={searchTerm}
+            />
+            <Button variant="outlined" onClick={() => setSearchTerm("")}>
+              ❌
+            </Button>
           </div>
         </div>
       </div>
@@ -153,7 +270,7 @@ export default function ViewTrans() {
           <TopFiveSpending data={trans} />
         </div>
       </div>
-      <div className="p-2 h-full md:h-9/12 bg-white shadow-md border border-slate-200 overflow-auto">
+      <div className="p-2 h-full md:h-9/12 bg-white shadow-md border border-slate-200 overflow-y-auto">
         {loading ? (
           <div style={{ textAlign: "center" }}>
             <span className="Loading material-symbols-outlined">sync</span>
