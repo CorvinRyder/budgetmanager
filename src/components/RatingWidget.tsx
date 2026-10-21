@@ -75,19 +75,25 @@ export default function RatingWidget({
   return (
     <div>
       <AlertDialog params={dialog} />
-      <Rating
-        precision={0.5}
-        onChange={(e, v) => {
-          const newTrans = { ...transaction };
-          newTrans.rating = v || 0;
-          showDialog(newTrans);
-        }}
-        value={transaction.rating || 0}
-      />
-      <div>
-        {transaction.comment && (
-          <TooltipSpan tooltip={transaction.comment}>Comment</TooltipSpan>
-        )}
+      <div className="md:block hidden">
+        <Rating
+          precision={0.5}
+          onChange={(e, v) => {
+            const newTrans = { ...transaction };
+            newTrans.rating = v || 0;
+            showDialog(newTrans);
+          }}
+          value={transaction.rating || 0}
+        />
+        <div>
+          {transaction.comment && (
+            <TooltipSpan tooltip={transaction.comment}>Comment</TooltipSpan>
+          )}
+        </div>
+      </div>
+      <div className="flex md:hidden justify-center items-center text-sm!">
+        <span className="material-symbols-outlined">star </span>
+        <span className="text-sm">{transaction.rating || "N/A"}</span>
       </div>
     </div>
   );

@@ -38,7 +38,12 @@ export async function GET(req: NextRequest) {
     }
   }
   return NextResponse.json(
-    await getTransactions(userId, transId, dateParsedDate, tagId)
+    await getTransactions({
+      userId,
+      transId,
+      month: dateParsedDate,
+      tag: tagId,
+    })
   );
 }
 

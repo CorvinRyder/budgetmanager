@@ -26,6 +26,7 @@ export default function ViewTrans() {
   const [trans, setTrans] = useState<Array<Transaction>>([]);
   const [tagList, setTagList] = useState<Array<Tag>>([]);
   const [tag, setTag] = useState<Tag>();
+  const [rateFilter, setRateFilter] = useState<string>("all");
 
   useEffect(() => {
     setLoading(true);
@@ -36,7 +37,7 @@ export default function ViewTrans() {
         : activeMode === "tags"
         ? `/api/Transaction?tag=${tag?.tag_id}`
         : activeMode === "journey"
-        ? `/api/Transaction?yearmonth=${moment(month).format("YYYY-MM-DD")}`
+        ? `/api/Transaction/RatedTransactions`
         : undefined;
 
     if (typeof reqUrl === "undefined") return;
@@ -47,7 +48,8 @@ export default function ViewTrans() {
       } else {
         const trans: Transaction[] = await r.json();
         cachedTransactions.current = trans;
-        setTrans(filterTrans);
+        if (activeMode === "journey") setTrans(filterTransRate);
+        else setTrans(filterTrans);
         setLoading(false);
       }
     });
@@ -73,6 +75,21 @@ export default function ViewTrans() {
                 (j) => j.item.toLowerCase().indexOf(searchTerm) > -1
               ))
         );
+
+  const filterTransRate = () => {
+    if (rateFilter === "all") return cachedTransactions.current;
+
+    const rateMin =
+      rateFilter === "45star" ? 4 : rateFilter === "23star" ? 2 : 1;
+
+    return cachedTransactions.current.filter(
+      (i) => ((i.rating === 0.5 && 1) || Math.floor(i.rating || 0)) === rateMin
+    );
+  };
+
+  useEffect(() => {
+    setTrans(filterTransRate);
+  }, [rateFilter]);
 
   useEffect(() => {
     setTrans(filterTrans());
@@ -215,6 +232,7 @@ export default function ViewTrans() {
 
           {activeMode === "tags" && (
             <select
+              value={tag?.tag_id}
               onChange={(e) => {
                 const id = parseInt(e.target.value);
                 if (isNaN(id)) return;
@@ -232,10 +250,15 @@ export default function ViewTrans() {
           )}
 
           {activeMode === "journey" && (
-            <select className="px-2.5 py-1 text-lg font-medium bg-white text-slate-700 border border-slate-700/60 rounded-md focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all">
+            <select
+              value={rateFilter}
+              onChange={(e) => setRateFilter(e.target.value)}
+              className="px-2.5 py-1 text-lg font-medium bg-white text-slate-700 border border-slate-700/60 rounded-md focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
+            >
               <option value="all">All Rated & Notes</option>
-              <option value="5star">5 Stars (High Value)</option>
-              <option value="regrets">1-2 Stars (Regrets)</option>
+              <option value="45star">4 To 5 Stars</option>
+              <option value="23star">2 To 3 Stars</option>
+              <option value="1star">Half to 1 Star</option>
             </select>
           )}
         </div>

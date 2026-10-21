@@ -15,7 +15,10 @@ const LoadEditpage = async ({
   if (transid) {
     const transId = parseInt(transid as string);
     if (!isNaN(transId)) {
-      const trans = await getTransactions(userId, parseInt(transid));
+      const trans = await getTransactions({
+        userId,
+        transId: parseInt(transid),
+      });
       if (trans.length > 0) curTrans = trans[0];
     }
   }

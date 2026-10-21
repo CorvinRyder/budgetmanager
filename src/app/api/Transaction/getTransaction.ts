@@ -1,12 +1,21 @@
 import { connectToDatabase } from "@/db";
 import sql from "mssql";
 
-export default function getTransactions(
-  userId: string,
-  transId?: number,
-  month?: Date,
-  tag?: number
-): Promise<Array<Transaction>> {
+type GetTransactionArguments = {
+  userId: string;
+  transId?: number;
+  month?: Date;
+  tag?: number;
+  ratedOnly?: boolean;
+};
+
+export default function getTransactions({
+  userId,
+  transId,
+  month,
+  tag,
+  ratedOnly,
+}: GetTransactionArguments): Promise<Array<Transaction>> {
   return new Promise(async (resolve) => {
     const sqlReq = (await connectToDatabase()).request();
     let sqlStatement = `
@@ -29,7 +38,10 @@ export default function getTransactions(
     from dbo.bm_cashflow where 
     dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
     from dbo.bm_transaction t1`;
-    if (transId !== undefined) {
+    if (!!ratedOnly) {
+      sqlStatement +=
+        ", dbo.bm_trans_rating btr where t1.trans_id = btr.trans_id";
+    } else if (transId !== undefined) {
       sqlStatement += " where t1.trans_id = @transid";
       sqlReq.input("transid", transId);
     } else if (tag !== undefined) {
