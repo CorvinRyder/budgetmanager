@@ -16,7 +16,7 @@ export async function GET() {
   const result = await (await connectToDatabase())
     .request()
     .query(
-      "select shoppinglist_id as item_id, food_name as item_name, brand, store_name, quantity, status from dbo.bm_shoppinglist where status <> 'D'"
+      "select shoppinglist_id as item_id, food_name as item_name, brand, store_name, quantity, quan_unit, status from dbo.bm_shoppinglist where status <> 'D'"
     );
   return NextResponse.json(result.recordset);
 }

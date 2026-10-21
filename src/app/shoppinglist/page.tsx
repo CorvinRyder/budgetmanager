@@ -1,407 +1,277 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import React, { FormEventHandler, useEffect, useState } from "react";
 
-// Define the type for a single shopping list item
-interface ShoppingItem {
-  item_id: number;
+type ShoppingItem = {
+  item_id?: number;
   item_name: string;
-  brand: string;
-  store_name: string;
-  quantity: number;
+  brand?: string;
+  store_name?: string;
+  quantity?: number;
+  quan_unit?: string;
   status: "U" | "C" | "D"; // U: Unchecked, C: Checked, D: Deleted
-}
+};
 
-// Define the type for the new item form data
-interface NewItemForm {
-  item_name: string;
-  brand: string;
-  store_name: string;
-  quantity: number;
-}
+const ShoppingListPage = () => {
+  const [items, setItems] = useState<ShoppingItem[]>([]);
 
-export default function ShoppingList() {
-  // Mock data to simulate the MSSQL database table.
-  const initialData: ShoppingItem[] = [
-    {
-      item_id: 1,
-      item_name: "Milk",
-      brand: "Lactaid",
-      store_name: "Grocery Outlet",
-      quantity: 1,
-      status: "U",
-    },
-    {
-      item_id: 2,
-      item_name: "Bread",
-      brand: "Wonder",
-      store_name: "Safeway",
-      quantity: 2,
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [filter, setFilter] = useState("all"); // 'all' | 'pending' | 'bought'
+
+  const handleAddItem: FormEventHandler = (e) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+
+    const newItem: ShoppingItem = {
+      item_id: Date.now(),
+      item_name: newItemName,
       status: "C",
-    },
-    {
-      item_id: 3,
-      item_name: "Coffee Beans",
-      brand: "Starbucks",
-      store_name: "Costco",
-      quantity: 1,
-      status: "U",
-    },
-    {
-      item_id: 4,
-      item_name: "Chicken Breast",
-      brand: "Foster Farms",
-      store_name: "Target",
-      quantity: 5,
-      status: "U",
-    },
-    {
-      item_id: 5,
-      item_name: "Lettuce",
-      brand: "Organic Valley",
-      store_name: "Trader Joe's",
-      quantity: 1,
-      status: "C",
-    },
-  ];
+    };
 
-  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(
-    initialData.filter((item) => item.status !== "D")
-  );
-  const [loading, setLoading] = useState<boolean>(true); // Set to false initially as we're using static data
+    setItems([newItem, ...items]);
+    setNewItemName("");
+    setNewItemPrice("");
+  };
 
-  // State for the new item form
-  const [newItem, setNewItem] = useState<NewItemForm>({
-    item_name: "",
-    brand: "",
-    store_name: "",
-    quantity: 1,
+  const toggleBought = (item_id: number) => {
+    setItems(
+      items.map((item) =>
+        item.item_id === item_id
+          ? { ...item, status: item.status === "C" ? "U" : "C" }
+          : item
+      )
+    );
+  };
+
+  const deleteItem = (item_id: number) => {
+    setItems(items.filter((item) => item.item_id !== item_id));
+  };
+
+  const filteredItems = items.filter((item) => {
+    if (filter === "pending") return item.status === "U";
+    if (filter === "bought") return item.status === "C";
+    return true;
   });
+
+  const totalEst = 0;
+  const totalSpent = 0;
 
   useEffect(() => {
     (async function () {
       const result = await fetch("/api/ShoppingList", {
         method: "GET",
       });
-      setShoppingList(await result.json());
-      setLoading(false);
+      setItems(await result.json());
     })();
   }, []);
 
-  // Handles input changes for the form
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewItem((prev) => ({
-      ...prev,
-      [name]: name === "quantity" ? parseInt(value) || 0 : value,
-    }));
-  };
-
-  // Handles form submission to add a new item
-  const handleAddItem = (e: FormEvent) => {
-    e.preventDefault();
-    if (newItem.item_name.trim() === "") return;
-
-    // In a real app, this would be an API call (POST request)
-    const newId = Math.max(...shoppingList.map((item) => item.item_id), 0) + 1;
-    const itemToAdd: ShoppingItem = {
-      ...newItem,
-      item_id: newId,
-      status: "U",
-    };
-
-    setShoppingList((prevList) => [...prevList, itemToAdd]);
-
-    // Reset form after submission
-    setNewItem({
-      item_name: "",
-      brand: "",
-      store_name: "",
-      quantity: 1,
-    });
-  };
-
-  // Toggles the status of an item between 'U' (Unchecked) and 'C' (Checked)
-  const toggleStatus = (id: number) => {
-    setShoppingList((prevList) =>
-      prevList.map((item) =>
-        item.item_id === id
-          ? { ...item, status: item.status === "U" ? "C" : "U" }
-          : item
-      )
-    );
-  };
-
-  // Deletes an item from the list by filtering it out
-  const deleteItem = (id: number) => {
-    setShoppingList((prevList) =>
-      prevList.filter((item) => item.item_id !== id)
-    );
-  };
-
-  // Clears all items from the list
-  const clearList = () => {
-    setShoppingList([]);
-  };
-
-  // Helper function to render a status icon
-  const getStatusIcon = (status: "U" | "C" | "D") => {
-    switch (status) {
-      case "C":
-        return (
-          <svg
-            className="w-6 h-6 text-green-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        );
-      case "U":
-      default:
-        return (
-          <svg
-            className="w-6 h-6 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        );
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <div className="text-xl font-medium">Loading shopping list...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4">
-      <div className="w-full max-w-4xl">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">
-            Shopping List
-          </h1>
-          <button
-            onClick={clearList}
-            className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg shadow-md transition-all duration-300 transform hover:scale-105"
-          >
-            Clear All
-          </button>
+    <div className="p-2 bg-[#EBF1F5] min-h-screen text-slate-800 space-y-2">
+      {/* 1. Top KPI Overview Witem_idgets */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Estimated Total Witem_idget */}
+        <div className="p-4 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-teal-100/80 text-teal-800 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">
+              shopping_bag
+            </span>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-witem_ider">
+              Est. Total Budget
+            </p>
+            <h3 className="text-2xl font-bold text-slate-800">
+              ${totalEst.toFixed(2)}
+            </h3>
+          </div>
         </div>
 
-        {/* Form to add a new shopping item */}
-        <form
-          onSubmit={handleAddItem}
-          className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl mb-8 flex flex-col sm:flex-row flex-wrap gap-4 items-end"
-        >
-          <div className="flex-1 w-full sm:w-auto">
-            <label
-              htmlFor="item_name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Item Name
-            </label>
-            <input
-              type="text"
-              id="item_name"
-              name="item_name"
-              value={newItem.item_name}
-              onChange={handleInputChange}
-              placeholder="e.g., Apple"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
+        {/* Total Spent / Checked Off */}
+        <div className="p-4 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-sky-100/80 text-sky-800 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">
+              attach_money
+            </span>
           </div>
-          <div className="flex-1 w-full sm:w-auto">
-            <label
-              htmlFor="brand"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Brand
-            </label>
-            <input
-              type="text"
-              id="brand"
-              name="brand"
-              value={newItem.brand}
-              onChange={handleInputChange}
-              placeholder="e.g., Gala"
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-witem_ider">
+              Checked Items Total
+            </p>
+            <h3 className="text-2xl font-bold text-slate-800">
+              ${totalSpent.toFixed(2)}
+            </h3>
           </div>
-          <div className="flex-1 w-full sm:w-auto">
-            <label
-              htmlFor="store_name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Store
-            </label>
-            <input
-              type="text"
-              id="store_name"
-              name="store_name"
-              value={newItem.store_name}
-              onChange={handleInputChange}
-              placeholder="e.g., Supermarket"
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          <div className="w-24">
-            <label
-              htmlFor="quantity"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Quantity
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              name="quantity"
-              value={newItem.quantity}
-              onChange={handleInputChange}
-              min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition-all duration-300 transform hover:scale-105"
-          >
-            Add Item
-          </button>
-        </form>
+        </div>
 
-        {shoppingList.length === 0 ? (
-          <div className="text-center text-xl text-gray-500 mt-10">
-            Your shopping list is empty.
+        {/* Items Count Summary */}
+        <div className="p-4 bg-white border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-amber-100/80 text-amber-800 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">
+              local_offer
+            </span>
           </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-witem_ider">
+              Progress
+            </p>
+            <h3 className="text-2xl font-bold text-slate-800">
+              {items.filter((i) => i.status === "C").length} / {items.length}{" "}
+              <span className="text-sm font-normal text-slate-500">Items</span>
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Quick-Add Item Bar */}
+      <form
+        onSubmit={handleAddItem}
+        className="p-3 bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-3"
+      >
+        <input
+          type="text"
+          placeholder="Add new item (e.g., Soy Milk)..."
+          value={newItemName}
+          onChange={(e) => setNewItemName(e.target.value)}
+          className="flex-1 px-3 py-2 text-sm bg-[#F0F4F8] border border-slate-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+        />
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Est. $ (optional)"
+          value={newItemPrice}
+          onChange={(e) => setNewItemPrice(e.target.value)}
+          className="w-full md:w-36 px-3 py-2 text-sm bg-[#F0F4F8] border border-slate-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+        />
+        <button
+          type="submit"
+          className="w-full md:w-auto px-4 py-2 bg-[#00A8B5] hover:bg-[#008c97] text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm"
+        >
+          <span className="material-symbols-outlined text-lg">add</span> Add
+          Item
+        </button>
+      </form>
+
+      {/* 3. Main Shopping Table Card */}
+      <div className="bg-white border border-slate-200 shadow-sm overflow-hitem_idden">
+        {/* Table Filter Controls Header */}
+        <div className="p-4 bg-[#EFF4F8] border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-bold text-slate-800 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#00A8B5] text-lg">
+              shopping_cart
+            </span>{" "}
+            Shopping Items
+          </h2>
+
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-slate-500 text-base">
+              filter_list
+            </span>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-300 rounded-md text-slate-700 focus:outline-none focus:border-teal-500"
+            >
+              <option value="all">All Items</option>
+              <option value="pending">To Buy</option>
+              <option value="bought">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="bg-[#EFF4F8]/60 text-slate-700 font-bold border-b border-slate-200">
+                <th className="py-3 px-4 w-12 text-center">Status</th>
+                <th className="py-3 px-4">Item</th>
+                <th className="py-3 px-4">Brand</th>
+                <th className="py-3 px-4">Store Name</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divitem_ide-y divitem_ide-slate-100">
+              {filteredItems.length === 0 ? (
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Item Name
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Brand
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Store
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Quantity
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Status
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
+                    No items in this list.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {shoppingList.map((item) => (
+              ) : (
+                filteredItems.map((item) => (
                   <tr
                     key={item.item_id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className={`hover:bg-slate-50/80 transition-colors ${
+                      item.status === "U" ? "bg-slate-50/50" : ""
+                    }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div
-                        className={`text-sm font-medium ${
+                    {/* Checkbox Toggle */}
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() =>
+                          item.item_id && toggleBought(item.item_id)
+                        }
+                        className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                          item.status === "U"
+                            ? "bg-teal-500/10 border-teal-500 text-white"
+                            : "border-slate-300 bg-white hover:border-teal-500"
+                        }`}
+                      >
+                        {item.status === "C" && (
+                          <span className="material-symbols-outlined text-sm font-bold">
+                            check
+                          </span>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Item Name */}
+                    <td className="py-3 px-4">
+                      <span
+                        className={`font-medium ${
                           item.status === "C"
-                            ? "line-through text-gray-400"
-                            : "text-gray-900 dark:text-gray-100"
+                            ? "line-through text-slate-400"
+                            : "text-slate-800"
                         }`}
                       >
                         {item.item_name}
-                      </div>
+                        {item.quantity &&
+                          ` x ${item.quantity} ${item.quan_unit}`}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-300">
-                        {item.brand}
-                      </div>
+
+                    {/* Tags */}
+                    <td className="py-3 px-4 font-medium text-slate-700">
+                      {item.brand}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-300">
-                        {item.store_name}
-                      </div>
+
+                    {/* Est Price */}
+                    <td className="py-3 px-4 font-medium text-slate-700">
+                      {item.store_name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-300">
-                        {item.quantity}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div
-                        onClick={() => toggleStatus(item.item_id)}
-                        className="cursor-pointer inline-flex items-center justify-center p-1 rounded-full transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                      >
-                        {getStatusIcon(item.status)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+
+                    {/* Actions */}
+                    <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => deleteItem(item.item_id)}
-                        className="p-2 text-red-500 hover:text-red-700 rounded-full transition-all duration-200 transform hover:scale-110"
+                        onClick={() => item.item_id && deleteItem(item.item_id)}
+                        className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors"
+                        title="Delete item"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                        <span className="material-symbols-outlined text-lg">
+                          delete
+                        </span>
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ShoppingListPage;
