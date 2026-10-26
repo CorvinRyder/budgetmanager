@@ -303,7 +303,7 @@ export default function ViewTrans() {
           <div>Cannot load the transaction data!</div>
         ) : (
           <table className="stable-auto w-full">
-            <thead className="bg-slate-100 border-b border-slate-200">
+            <thead className="bg-slate-100 border-b border-slate-200 md:table-header-group hidden">
               <tr className="text-left text-sm font-semibold text-slate-900">
                 <th className="py-4">Date</th>
                 <th className="py-4">Location</th>
@@ -317,10 +317,12 @@ export default function ViewTrans() {
               {trans.map((i, j) => (
                 <tr
                   key={j}
-                  className="border-b border-slate-200 hover:bg-slate-50 p-4 text-sm text-slate-700"
+                  className="border-b border-slate-200 hover:bg-slate-50 p-4 text-sm text-slate-700 md:table-row flex flex-wrap w-full items-center"
                 >
-                  <td>
-                    {moment(i.transdate).format("MM-DD HH:mm")}
+                  <td className="basis-1/3">
+                    {moment(i.transdate).format(
+                      activeMode === "monthly" ? "MM-DD HH:mm" : "YYYY-MM-DD"
+                    )}
                     {i.isdraft && (
                       <div>
                         <span className="material-symbols-outlined align-middle">
@@ -349,7 +351,7 @@ export default function ViewTrans() {
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td className="basis-1/3 wrap-anywhere">
                     {i.location ? (
                       <a
                         href={
@@ -361,14 +363,14 @@ export default function ViewTrans() {
                       >
                         <span className="material-symbols-outlined align-middle">
                           map
-                        </span>
+                        </span>{" "}
                         {i.store}
                       </a>
                     ) : (
                       i.store
                     )}
                   </td>
-                  <td>
+                  <td className="basis-1/3">
                     {i.receipt && (
                       <a
                         href={`/receipts/${i.receipt.filename}`}
@@ -381,17 +383,42 @@ export default function ViewTrans() {
                       </a>
                     )}
                   </td>
-                  <td className="py-3">
-                    {i.items &&
-                      i.items.map((k, l) => (
-                        <div key={l}>
-                          <TooltipSpan tooltip={k.remark}>
-                            {k.item} (${k.amount})
-                          </TooltipSpan>
-                        </div>
-                      ))}
+                  <td className="flex-1 md:p-2 p-0">
+                    <div className="md:block hidden">
+                      {i.items &&
+                        i.items.map((k, l) => (
+                          <div key={l}>
+                            <TooltipSpan tooltip={k.remark}>
+                              {k.item} (${k.amount})
+                            </TooltipSpan>
+                          </div>
+                        ))}
+                    </div>
+                    <div
+                      className="md:hidden block cursor-pointer"
+                      onClick={() => {
+                        setDialogParams({
+                          open: true,
+                          title: "Item List",
+                          jsx:
+                            i.items &&
+                            i.items.map((k, l) => (
+                              <div key={l} className="mb-1">
+                                <TooltipSpan tooltip={k.remark}>
+                                  {k.item} (${k.amount})
+                                </TooltipSpan>
+                              </div>
+                            )),
+                        });
+                      }}
+                    >
+                      <span className="material-symbols-outlined align-middle">
+                        open_in_new
+                      </span>{" "}
+                      Items List
+                    </div>
                   </td>
-                  <td>
+                  <td className="flex-1 text-center md:text-left">
                     {i.total && "$" + Math.abs(i.total).toFixed(2)}
                     <RatingWidget
                       transaction={i}
@@ -402,7 +429,7 @@ export default function ViewTrans() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td className="flex-1 text-right md:text-left">
                     <Link href={`/edittrans?transid=${i.trans_id}`}>
                       <span className="material-symbols-outlined ActionBtn">
                         edit
