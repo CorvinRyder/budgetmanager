@@ -34,7 +34,7 @@ export default function getTransactions({
     ) tags,
     (select rating, comment from bm_trans_rating br where br.trans_id = t1.trans_id FOR JSON PATH
     ) ratingInfo,     
-    (select cast(sum(amount) as numeric(5,2))
+    (select cast(sum(amount) as numeric(8,2))
     from dbo.bm_cashflow where 
     dbo.bm_cashflow.trans_id = t1.trans_id group by trans_id) total 
     from dbo.bm_transaction t1`;
@@ -52,7 +52,7 @@ export default function getTransactions({
       if (month === undefined) month = new Date();
       sqlReq.input("yearmonth", sql.DateTime, month);
       sqlStatement +=
-        " where transdate between datetrunc(MONTH, @yearmonth) and dateadd(Month, 1, datetrunc(MONTH, @yearmonth))-0.00001";
+        " where transdate between CAST(datetrunc(MONTH, @yearmonth) AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS datetime2)and CAST(dateadd(Month, 1, datetrunc(MONTH, @yearmonth)) AT TIME ZONE 'Eastern Standard Time' AT TIME ZONE 'UTC' AS datetime2)";
     }
     sqlStatement += " and t1.deleted is null and userid = @userId";
     sqlReq.input("userId", userId);
